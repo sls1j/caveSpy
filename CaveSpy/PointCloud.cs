@@ -40,8 +40,9 @@ namespace CaveSpy
             GC.SuppressFinalize(this);
         }
 
-        public Map MakeMap(int gridWidth, int gridHeight, double physicalX, double physicalY, double physicalWidth, double physicalHeight)
+        public Map MakeMap(int gridWidth, double physicalX, double physicalY, double physicalWidth, double physicalHeight)
         {
+            int gridHeight = (int)(gridWidth / physicalHeight * physicalWidth);
             var map = new Map(gridHeight, gridWidth, physicalX, physicalY, physicalWidth, physicalHeight);
             return map;
         }

@@ -13,7 +13,7 @@ namespace CaveSpy
         {
         }
 
-        public List<Cave> FindCaves(Map map)
+        public List<Cave> FindCaves(Map map, double floodDepth)
         {
             int[] minCount = new int[map.elevations.Length];
             var results = new List<Cave>();
@@ -22,84 +22,52 @@ namespace CaveSpy
             Queue<int> pointsToTry = new Queue<int>(10);
 
             int i = map.height + 1;
+            int total = map.height * map.width;
             for (int y = 1; y < map.height - 1; y++)
             {
                 for (int x = 1; x < map.width - 1; x++, i++)
                 {
-                    // look for local minimums
-                    bool notFound = true;
-
-                    int minAt = i;
-                    int minX = x;
-                    int minY = y;
-                    int xStart = x;
-                    int yStart = y;
-                    double min = map.elevations[i];
-
-                    while (notFound)
+                    if (i % 10000 == 0)
+                        Console.WriteLine($"Procssing {i}/{total} points via flood: cnt {results.Count}");
+                    int size = Flood(map, x, y, floodDepth, 300);
+                    if (size > 5)
                     {
-                        // check local neighborhood    
-                        xStart = minX;
-                        yStart = minY;
-                        Extensions.NeighborhoodLoop(map.width, map.height, xStart, yStart, (ii, xx, yy) =>
-                         {
-                             if (map.elevations[ii] < min)
-                             {
-                                 min = map.elevations[ii];
-                                 minAt = ii;
-                                 minX = xx;
-                                 minY = yy;
-                             }
-                         });
-
-                        // we found the local min when there is no change in position
-                        notFound = minX != xStart || minY != yStart;
-                    }
-                    minCount[minAt]++;
-                }
-                i += 2;
-            }
-
-            i = 0;
-            for (int y = 1; y < map.height - 1; y++)
-            {
-                for (int x = 1; x < map.width - 1; x++, i++)
-                {
-                    if (minCount[i] > 3)
-                    {
-                        var z = map.elevations[i];
-                        int floodSize = Flood(map, x, y, 2, 100);
-                        
-                        if (floodSize > 3 && floodSize < 100)
-                        {
-                            Cave c = new Cave() { X = x, Y = y, Z = map.elevations[i] };
-                            results.Add(c);
-                        }
+                        Cave c = new Cave() { X = x, Y = y, Z = map.elevations[i] };
+                        results.Add(c);
                     }
                 }
                 i += 2;
             }
-
 
 
             return results;
         }
 
-        private int Flood(Map map, int xStart, int yStart, int floodHeight, int maxSize)
+        private int Flood(Map map, int xStart, int yStart, double floodHeight, int maxSize)
         {
             HashSet<int> flooded = new HashSet<int>();
             int size = 0;
+            bool edge = false;
+
+            double floodLevel = map.elevations[xStart + yStart * map.width] + floodHeight;
 
             void FloodInner(int x, int y)
-            {
-                if (x < 0 || x > map.width || y < 0 || y > map.height)
-                    return;
-
-                double floodLevel = map.elevations[x + y * map.width] + floodHeight;
+            {                
+                if (edge)
+                    return;                
 
                 Extensions.NeighborhoodLoop(map.width, map.height, x, y,
-                    (xx, yy, ii) =>
+                    (ii, xx, yy) =>
                     {
+                        if (edge)
+                            return;
+
+                        if (xx == 0 || yy == 0 || xx == map.width - 1 || yy == map.height - 1)
+                        {
+                            edge = true;
+                            return;
+                        }
+                       
                         if (size < maxSize && !flooded.Contains(ii) && map.elevations[ii] <= floodLevel)
                         {
                             size++;
@@ -111,7 +79,7 @@ namespace CaveSpy
 
             FloodInner(xStart, yStart);
 
-            return size;
+            return (edge || size == maxSize ) ? -1 : size;
         }        
     }
 
