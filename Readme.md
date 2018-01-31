@@ -1,19 +1,22 @@
-** README
+Cave Spy
+========
 
 Reads a .LAS file.  Supports PointCloud formats 1,2 and 3.
 
   
-<h1> <a href="http://sls1j.ddns.net/bin/caveSpy-1.0.0.1.zip">Cave Spy Version 1.0.0.1</a> Release</h1>
-<p> - Changes include optimizations and multithreading for the cave finding algorithm.  This produces a 2x
-speed increase in the algorithm</p>
+## [Cave Spy Version 1.0.0.1](http://sls1j.ddns.net/bin/caveSpy-1.0.0.1.zip) Release
+Changes include optimizations and multithreading for the cave finding algorithm.  This produces a 2x speed increase in the algorithm
 
-<h1>Usage</h1>
-<p>To run CaveSpy you must open a command line to specify which input file, output file and image size.</p>
-<p>For example: 
-<pre>C:\> CaveSpy.exe --input MyLidar.las --output MyLidar.bmp --image-size 1600 --look-for-caves --flood 1.0
+##Usage
+To run CaveSpy you must open a command line to specify which input file, output file and image size.
+For example: 
+```
+C:\> CaveSpy.exe --input MyLidar.las --output MyLidar.bmp --image-size 1600 --look-for-caves --flood 1.0
+```
 
-<h2> Full command line specification </h2>
-<pre>
+## Full command line specification
+
+```
 CaveSpy.exe --input <input .las file> --output <output.bmp> --image-size <size in pixels> [--top <GPS coord in UTM> --left <GPS coord in UTM> --width <meters> --height <meters>] [--look-for-caves] [--flood <flood depth in meters>]
   --input - the file name of the .las file that will be read in
   --output - the name of the bitmap that will be written to disk
@@ -26,4 +29,4 @@ CaveSpy.exe --input <input .las file> --output <output.bmp> --image-size <size i
   --flood - the depth in meters that the finding algorithm will use to find pits.  Is only used when --look-for-caves is specified *
   
   * - are optional parameters
-  </pre>
+```
