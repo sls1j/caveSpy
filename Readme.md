@@ -40,4 +40,5 @@ CaveSpy.exe --input <input .las file> --output <output.bmp> --image-size <size i
 * Add a GUI to make it easier to use.
 * Add algorithm to calculate drainage area of given spots.
 * Add false color for hillshade and elevation
+* Add full depression shading instead of just dot.
 
