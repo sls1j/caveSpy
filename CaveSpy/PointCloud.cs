@@ -86,6 +86,9 @@ namespace CaveSpy
 
             for (int i = 0; i < _header.NumberOfPointRecords; i++)
             {
+                if (i % 1000000 == 0)
+                    Console.WriteLine($"{i:0,000}/{_header.NumberOfPointRecords:0,000} {(double)i / (double)_header.NumberOfPointRecords * 100: 0.00}");
+
                 var p = new PointDataRecordFormat();
                 readFunc(p, _reader);
 

@@ -12,6 +12,7 @@ namespace CaveSpy
     {
         static void Main(string[] args)
         {
+            DateTime startTime = DateTime.UtcNow;
             string input = "";
             string output = "";
             int size = 0;
@@ -68,6 +69,9 @@ namespace CaveSpy
                 img.AddCaves(map, caves, 255, 0, 0);
             }
             img.Save(map, output);
+
+            Console.WriteLine($"Processing time: {DateTime.UtcNow - startTime}");
+            Console.ReadKey();
         }
 
         private static void PrintError(string errorMessage)

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace CaveSpy
@@ -21,22 +22,49 @@ namespace CaveSpy
             // look for caves via looking for low points
             Queue<int> pointsToTry = new Queue<int>(10);
 
-            int i = map.height + 1;
-            int total = map.height * map.width;
-            for (int y = 1; y < map.height - 1; y++)
+            int threadCount = System.Environment.ProcessorCount * 2;
+            using (var s = new Semaphore(threadCount, threadCount))
             {
-                for (int x = 1; x < map.width - 1; x++, i++)
+                int total = map.height * map.width;
+                for (int y = 1; y < map.height - 1; y++)
                 {
-                    if (i % 10000 == 0)
-                        Console.WriteLine($"Procssing {i}/{total} points via flood: cnt {results.Count}");
-                    int size = Flood(map, x, y, floodDepth, 300);
-                    if (size > 5)
+                    s.WaitOne();
+                    ThreadPool.QueueUserWorkItem(o =>
                     {
-                        Cave c = new Cave() { X = x, Y = y, Z = map.elevations[i] };
-                        results.Add(c);
-                    }
+                        try
+                        {
+                            List<Cave> newCaves = new List<Cave>();
+                            int yy = (int)o;
+                            int ii = yy * map.width + 1;
+                            for (int x = 1; x < map.width - 1; x++, ii++)
+                            {
+
+                                int size = Flood(map, x, yy, floodDepth, 300);
+                                if (size > 5)
+                                {
+                                    Cave c = new Cave() { X = x, Y = yy, Z = map.elevations[ii] };
+                                    newCaves.Add(c);
+                                }
+                            }
+                            if (newCaves.Count > 0)
+                                lock (results)
+                                    results.AddRange(newCaves);
+                        }
+                        finally
+                        {
+                            s.Release();
+                        }
+                    }, y);
+
+
+                    int i = y * map.height;
+                    Console.WriteLine($"Procssing {i:0,000}/{total:0,000} {(double)i / (double)total * 100:0.00}% points via flood: cnt {results.Count}");
                 }
-                i += 2;
+
+                // resync all the threads
+                for (int j = 0; j < threadCount; j++)
+                    s.WaitOne();
+
             }
 
 
@@ -51,12 +79,13 @@ namespace CaveSpy
 
             double floodLevel = map.elevations[xStart + yStart * map.width] + floodHeight;
 
-            void FloodInner(int x, int y)
-            {                
-                if (edge)
-                    return;                
+            var stack = new Stack<Location>();
+            stack.Push(new Location(xStart, yStart));
 
-                Extensions.NeighborhoodLoop(map.width, map.height, x, y,
+            while( !edge && size < maxSize && stack.Count > 0 ){
+                var loc = stack.Pop();
+
+                Extensions.NeighborhoodLoop(map.width, map.height, loc.x, loc.y,
                     (ii, xx, yy) =>
                     {
                         if (edge)
@@ -67,20 +96,30 @@ namespace CaveSpy
                             edge = true;
                             return;
                         }
-                       
-                        if (size < maxSize && !flooded.Contains(ii) && map.elevations[ii] <= floodLevel)
+
+                        if (size < maxSize && map.elevations[ii] <= floodLevel && !flooded.Contains(ii))
                         {
                             size++;
                             flooded.Add(ii);
-                            FloodInner(xx, yy);
+                            stack.Push(new Location(xx, yy));
                         }
                     });
             }
 
-            FloodInner(xStart, yStart);
+            return (edge || size == maxSize) ? -1 : size;
+        }
 
-            return (edge || size == maxSize ) ? -1 : size;
-        }        
+        private class Location
+        {
+            public int x;
+            public int y;
+
+            public Location(int x, int y)
+            {
+                this.x = x;
+                this.y = y;
+            }
+        }
     }
 
     public class Cave
