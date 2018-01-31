@@ -30,3 +30,10 @@ CaveSpy.exe --input <input .las file> --output <output.bmp> --image-size <size i
   
   * - are optional parameters
 ```
+
+## Roadmap
+
+* Add a kmz or kml export option to allow for overlaying data on Google Earth
+* Add directionality and intensity to the hillshading
+* Add an option exclude classified types such as vegetation
+* Add a GUI to make it easier to use.
