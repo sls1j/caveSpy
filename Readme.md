@@ -4,7 +4,7 @@ Cave Spy
 Reads a .LAS file.  Supports PointCloud formats 1,2 and 3.
 
   
-## Release [1.0.0.1](http://sls1j.ddns.net/bin/caveSpy-1.0.0.1.zip)
+## Release [1.0.0.1](http://sls1j.ddns.net/bin/CaveSpy-1.0.0.1.zip)
 Changes include optimizations and multithreading for the cave finding algorithm.  This produces a 2x speed increase in the algorithm
 
 ##Usage
