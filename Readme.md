@@ -38,4 +38,6 @@ CaveSpy.exe --input <input .las file> --output <output.bmp> --image-size <size i
 * Add the ability to use the colors supplied from LIDAR in LAS point format 2 and 3
 * Add an option exclude classified types such as vegetation
 * Add a GUI to make it easier to use.
+* Add algorithm to calculate drainage area of given spots.
+* Add false color for hillshade and elevation
 
