@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Folder>
+    <name>CaveSpy.exe</name>
+    <description>Examples of ground overlays</description>
+    <GroundOverlay>
+      <name>**OverlayName**</name>
+      <description>**Description**</description>
+      <Icon>
+        <href>**Ref**</href>
+      </Icon>
+      <LatLonBox>
+        <north>**North**</north>
+        <south>**South**</south>
+        <east>**East**</east>
+        <west>**West**</west>
+        <rotation>**Rotation**</rotation>
+      </LatLonBox>
+    </GroundOverlay>
+  </Folder>
+</kml>

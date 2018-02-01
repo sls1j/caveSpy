@@ -5,6 +5,9 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.IO;
+using System.Reflection;
+using CoordinateSharp;
 
 namespace CaveSpy
 {
@@ -23,7 +26,7 @@ namespace CaveSpy
             double max = map.elevations.Max();
             double min = map.elevations.Min();
 
-            double scale = 256 / (max - min);            
+            double scale = 256 / (max - min);
 
             for (int i = 0, ii = 0; i < map.elevations.Length; i++)
             {
@@ -41,9 +44,9 @@ namespace CaveSpy
                     else
                         dv = 0;
                 }
-                    
+
                 double scaledValue = (v - min) * scale + dv;
-                byte color = (byte)Math.Max(Math.Min(scaledValue,255),0);
+                byte color = (byte)Math.Max(Math.Min(scaledValue, 255), 0);
                 image[ii++] = color;
                 image[ii++] = color;
                 image[ii++] = color;
@@ -51,7 +54,7 @@ namespace CaveSpy
             }
 
             map.SetProperty("image", image);
-        }        
+        }
 
         public void AddCaves(Map map, List<Cave> caves, int red, int green, int blue)
         {
@@ -71,6 +74,66 @@ namespace CaveSpy
         }
 
         public void Save(Map map, string fileName)
+        {
+            string ext = Path.GetExtension(fileName);
+            switch (ext)
+            {
+                case ".bmp":
+                    WriteImage(map, fileName);
+                    break;
+                case ".kml":
+                    WriteKml(map, fileName);
+                    break;
+
+            }
+        }
+
+        private static void WriteKml(Map map, string path)
+        {
+            string fileName = Path.GetFileName(path);
+            string dirName = Path.GetFileNameWithoutExtension(fileName);
+
+            string packagePath = Path.Combine(Path.GetDirectoryName(path), dirName);
+            Directory.CreateDirectory(packagePath);
+            string kmlPath = Path.Combine(packagePath, fileName);
+            string imagePath = Path.Combine(packagePath, Path.ChangeExtension(fileName, ".bmp"));
+            WriteImage(map, imagePath);
+            string template = LoadResource("CaveSpy.kmlTemplate.xml");
+
+            // north and west
+            var utm = new CoordinateSharp.UniversalTransverseMercator("T", 12, map.physicalLeft, map.physicalBottom);
+            var nw = UniversalTransverseMercator.ConvertUTMtoLatLong( utm  );
+
+            // south and east
+            var se = CoordinateSharp.UniversalTransverseMercator.ConvertUTMtoLatLong(
+                new CoordinateSharp.UniversalTransverseMercator("T", 12, map.physicalRight, map.physicalTop));
+
+            string body = template.Replace("**OverlayName**", dirName);
+            body = body.Replace("**Description**", "Create by CaveSpy");
+            body = body.Replace("**Ref**", Path.GetFileName(imagePath));
+            body = body.Replace("**North**", nw.Latitude.DecimalDegree.ToString());
+            body = body.Replace("**West**", nw.Longitude.DecimalDegree.ToString());
+            body = body.Replace("**South**", se.Latitude.DecimalDegree.ToString());
+            body = body.Replace("**East**", se.Longitude.DecimalDegree.ToString());
+            body = body.Replace("**Rotation**", "0");
+            File.WriteAllText(kmlPath, body);
+        }
+
+        public static string LoadResource(string resourceName)
+        {
+            var assembly = Assembly.GetExecutingAssembly();
+            //var resourceName = "AssemblyName.MyFile.txt";
+
+            using (Stream stream = assembly.GetManifestResourceStream(resourceName))
+            {
+                using (StreamReader reader = new StreamReader(stream))
+                {
+                    return reader.ReadToEnd();
+                }
+            }
+        }
+
+        private static void WriteImage(Map map, string fileName)
         {
             byte[] image = map.GetProperty<byte[]>("image");
 
