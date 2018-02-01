@@ -79,7 +79,7 @@ namespace CaveSpy
             Console.WriteLine($"Error: {errorMessage}");
             Console.WriteLine("CaveSpy.exe --input <input .las file> --output <output.bmp> --image-size <size in pixels> [--top <GPS coord in UTM> --left <GPS coord in UTM> --width <meters> --height <meters>] [--look-for-caves] [--flood <flood depth in meters>]");
             Console.WriteLine("--input - the file name of the .las file that will be read in");
-            Console.WriteLine("--output - the name of the bitmap that will be written to disk");
+            Console.WriteLine("--output - the name of the output that will be written to disk.  Supports format .bmp and .kml");
             Console.WriteLine("--top -- the northing UTM coordinate of the corner of the map (south,west corner)");
             Console.WriteLine("--left -- the easting UTM coordinate of the corner of the map (south,west corner)");
             Console.WriteLine("--width -- the distance in meters the area will stretch toward the east");
