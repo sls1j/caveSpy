@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -15,7 +16,7 @@ namespace CaveSpy
             DateTime startTime = DateTime.UtcNow;
             string input = "";
             string output = "";
-            int size = 0;
+            int imageSize = 0;
             double floodDepth = 1;
             bool useBounds = false;
             double top = 0;
@@ -36,50 +37,78 @@ namespace CaveSpy
                     case "--left": useBounds = true; left = double.Parse(args[++i]); break;
                     case "--width": useBounds = true; widthMeters = double.Parse(args[++i]); break;
                     case "--height": useBounds = true; heightMeters = double.Parse(args[++i]); break;
-                    case "--image-size": size = int.Parse(args[++i]); break;
+                    case "--image-size": imageSize = int.Parse(args[++i]); break;
                     case "--look-for-caves": lookForCaves = true; break;
                 }
             }
 
-            if (size <= 0 || string.IsNullOrEmpty(input) || string.IsNullOrEmpty(output))
+            if (string.IsNullOrEmpty(input) || string.IsNullOrEmpty(output))
             {
                 PrintError("Invalid or missing parameters.");
                 return;
-            }
+            }            
 
-            PointCloud cloud = new PointCloud(input);
-            Map map = null;
-            if (useBounds)
-                map = cloud.MakeMap(size, left, top, widthMeters, heightMeters);
-            else
-                map = cloud.MakeMap(size);
-
-            Console.WriteLine($"{map.width}x{map.height}");
-            cloud.ExtractElevationMap(map);
-            Debug.WriteLine("Extracted map");
-            cloud.FillMap(map);
-            Debug.WriteLine("Filled map");
-            var img = new Imaging();
-            img.MakeImage(map);
-            img.RenderElevationImage(map, true, false);
-            if (lookForCaves)
+            try
             {
-                CaveFinder finder = new CaveFinder();
-                var caves = finder.FindCaves(map, floodDepth);
-                img.AddCaves(map, caves, 255, 0, 0);
+                Map map = null;
+                string ext = Path.GetExtension(input);
+                switch (ext)
+                {
+                    case ".las":
+                        {
+                            PointCloud cloud = new PointCloud(input);
+                            if (imageSize == 0)
+                            {
+                                PrintError("--image-size must be none zero.");
+                                return;
+                            }
+
+                            if (useBounds)
+                                map = cloud.MakeMap(imageSize, left, top, widthMeters, heightMeters);
+                            else
+                                map = cloud.MakeMap(imageSize);
+
+                            Console.WriteLine($"{map.width}x{map.height}");
+                            cloud.ExtractElevationMap(map);
+                            Debug.WriteLine("Extracted map");
+                            cloud.FillMap(map);
+                        }
+                        break;
+                    case ".map":
+                        map = Map.Load(input);
+                        break;
+                    default:
+                        throw new ArgumentException($"File extension {ext} not supported for input.");
+                }
+
+                Debug.WriteLine("Filled map");
+                var img = new Imaging();
+                img.MakeImage(map);
+                img.RenderElevationImage(map, true, false);
+                if (lookForCaves)
+                {
+                    CaveFinder finder = new CaveFinder();
+                    var caves = finder.FindCaves(map, floodDepth);
+                    img.AddCaves(map, caves, 255, 0, 0);
+                }
+                img.Save(map, output);
             }
-            img.Save(map, output);
+            catch (Exception ex)
+            {
+                PrintError(ex.Message);
+            }
 
             Console.WriteLine($"Processing time: {DateTime.UtcNow - startTime}");
-            Console.ReadKey();
+            if ( Debugger.IsAttached )
+                Console.ReadKey();
         }
 
         private static void PrintError(string errorMessage)
         {
             Console.WriteLine($"Error: {errorMessage}");
             Console.WriteLine("CaveSpy.exe --input <input .las file> --output <output.bmp> --image-size <size in pixels> [--top <GPS coord in UTM> --left <GPS coord in UTM> --width <meters> --height <meters>] [--look-for-caves] [--flood <flood depth in meters>]");
-            Console.WriteLine("--input - the file name of the .las file that will be read in");
-            Console.WriteLine("--output - the name of the output that will be written to disk.  Supports format .bmp and .kml");
+            Console.WriteLine("--input - the file name of the .las or a .map file that will be read in");
+            Console.WriteLine("--output - the name of the output that will be written to disk.  Supports format .bmp, .kml, and .map (a intermediate format for CaveSpy)");
             Console.WriteLine("--top -- the northing UTM coordinate of the corner of the map (south,west corner)");
             Console.WriteLine("--left -- the easting UTM coordinate of the corner of the map (south,west corner)");
             Console.WriteLine("--width -- the distance in meters the area will stretch toward the east");

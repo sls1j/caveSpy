@@ -39,9 +39,15 @@ namespace CaveSpy
         public double MinY;
         public double MaxZ;
         public double MinZ;
+        public List<PointCloudVariableLengthHeader> VarHeaders;        
 
+        public PointCloudHeader()
+        {
+            VarHeaders = new List<PointCloudVariableLengthHeader>();
+        }
 
         public PointCloudHeader(BinaryReader r)
+            :this()
         {
             Read(r);
         }
@@ -81,6 +87,11 @@ namespace CaveSpy
             MinY = reader.ReadDouble();
             MaxZ = reader.ReadDouble();
             MinZ = reader.ReadDouble();
+            for (int i = 0; i < this.NumberOfVariableLengthRecords; i++)
+            {
+                var vh = new PointCloudVariableLengthHeader(reader);                
+                VarHeaders.Add(vh);
+            }
         }
     }
 
@@ -147,6 +158,37 @@ namespace CaveSpy
             p.Red = reader.ReadUInt16();
             p.Green = reader.ReadUInt16();
             p.Blue = reader.ReadUInt16();
+        }
+    }
+
+    public class PointCloudVariableLengthHeader
+    {
+        public ushort Reserved;
+        public string UserId; // 16 bytes
+        public ushort RecordId;
+        public ushort RecordLengthAfterHeader;
+        public string Description;
+        public byte[] Data;
+
+        public PointCloudVariableLengthHeader()
+        {
+
+        }
+
+        public PointCloudVariableLengthHeader(BinaryReader reader)
+            : this()
+        {
+            Read(reader);
+        }
+
+        public void Read(BinaryReader reader)
+        {
+            Reserved = reader.ReadUInt16();
+            UserId = reader.ReadString(16);
+            RecordId = reader.ReadUInt16();
+            RecordLengthAfterHeader = reader.ReadUInt16();
+            Description = reader.ReadString(32);
+            Data = reader.ReadBytes(RecordLengthAfterHeader);
         }
     }
 }

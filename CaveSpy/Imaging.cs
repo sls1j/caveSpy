@@ -84,7 +84,9 @@ namespace CaveSpy
                 case ".kml":
                     WriteKml(map, fileName);
                     break;
-
+                case ".map":
+                    map.Save(fileName);
+                    break;
             }
         }
 
@@ -101,12 +103,13 @@ namespace CaveSpy
             string template = LoadResource("CaveSpy.kmlTemplate.xml");
 
             // north and west
-            var utm = new CoordinateSharp.UniversalTransverseMercator("T", 12, map.physicalLeft, map.physicalBottom);
+            Tuple<string, int> zone = GetZone(map.zone);
+            var utm = new UniversalTransverseMercator(zone.Item1, zone.Item2, map.physicalLeft, map.physicalBottom);
             var nw = UniversalTransverseMercator.ConvertUTMtoLatLong( utm  );
 
-            // south and east
+            // south and east            
             var se = CoordinateSharp.UniversalTransverseMercator.ConvertUTMtoLatLong(
-                new CoordinateSharp.UniversalTransverseMercator("T", 12, map.physicalRight, map.physicalTop));
+                new CoordinateSharp.UniversalTransverseMercator(zone.Item1, zone.Item2, map.physicalRight, map.physicalTop));
 
             string body = template.Replace("**OverlayName**", dirName);
             body = body.Replace("**Description**", "Create by CaveSpy");
@@ -117,6 +120,13 @@ namespace CaveSpy
             body = body.Replace("**East**", se.Longitude.DecimalDegree.ToString());
             body = body.Replace("**Rotation**", "0");
             File.WriteAllText(kmlPath, body);
+        }
+
+        private static Tuple<string, int> GetZone(string zone)
+        {
+            string latZ = new string( zone[zone.Length - 1], 1 );
+            int longZ = int.Parse(zone.Substring(0, zone.Length - 1));
+            return Tuple.Create(latZ, longZ);
         }
 
         public static string LoadResource(string resourceName)

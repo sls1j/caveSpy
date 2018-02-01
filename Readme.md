@@ -1,14 +1,17 @@
 Cave Spy
 ========
 
-Reads a .LAS file.  Supports PointCloud formats 1,2 and 3.
+Reads a .LAS file, and can do some analysis on the data to help locate caves.  Then it outputs either and image or a kml overlay for Google Earth
 
+## Release [1.0.0.3](http://sls1j.ddns.net/bin/CaveSpy-1.0.0.2.zip)
+Fixes bug and adds ability to read the UTM zones so that the kml puts the overlay in the correct place.
   
+## Release [1.0.0.2](http://sls1j.ddns.net/bin/CaveSpy-1.0.0.2.zip)
+Added support for producing a kml that can be imported into Google Earth
+
 ## Release [1.0.0.1](http://sls1j.ddns.net/bin/CaveSpy-1.0.0.1.zip)
 Changes include optimizations and multithreading for the cave finding algorithm.  This produces a 2x speed increase in the algorithm
 
-## Release [1.0.0.2](http://sls1j.ddns.net/bin/CaveSpy-1.0.0.2.zip)
-Added support for producing a kml that can be imported into Google Earth
 
 ## Usage
 To run CaveSpy you must open a command line to specify which input file, output file and image size.
@@ -35,7 +38,6 @@ CaveSpy.exe --input <input .las file> --output <output.bmp> --image-size <size i
 ```
 
 ## Roadmap
-
 * Add false color for hillshade and elevation
 * Add directionality and intensity to the hillshading
 * Add the ability to use the colors supplied from LIDAR in LAS point format 2 and 3
@@ -43,4 +45,5 @@ CaveSpy.exe --input <input .las file> --output <output.bmp> --image-size <size i
 * Add algorithm to calculate drainage area of given spots.
 * Add full depression shading instead of just dot.
 * Add a GUI to make it easier to use.
+* Implemented 2018-02-01 Add support for an intermediate format that saves the processing data
 * Implemented 2018-01-31 ~~Add a kmz or kml export option to allow for overlaying data on Google Earth~~

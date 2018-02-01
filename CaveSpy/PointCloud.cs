@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -12,13 +13,22 @@ namespace CaveSpy
         FileStream _fin;
         BinaryReader _reader;
         PointCloudHeader _header;
+        ProjectionData _projection;
 
         public PointCloud(string path)
         {
             _fin = new FileStream(path, FileMode.Open);
             _reader = new BinaryReader(_fin);
             _header = new PointCloudHeader(_reader);
+            var rawRrojectionData = _header.VarHeaders.FirstOrDefault(h => h.Description == "OGR variant of OpenGIS WKT SRS");
+            if (null == rawRrojectionData)
+                _projection = new ProjectionData();
+            else
+                _projection = new ProjectionData(rawRrojectionData.Data);
         }
+
+        public PointCloudHeader Header { get { return _header; } }
+        public ProjectionData Projection { get { return _projection; } }
 
         public void Dispose()
         {
@@ -43,13 +53,7 @@ namespace CaveSpy
         public Map MakeMap(int gridWidth, double physicalX, double physicalY, double physicalWidth, double physicalHeight)
         {
             int gridHeight = (int)(gridWidth / physicalHeight * physicalWidth);
-            var map = new Map(gridHeight, gridWidth, physicalX, physicalY, physicalWidth, physicalHeight);
-            return map;
-        }
-
-        public Map MakeMap(int gridWidth, int gridHeight)
-        {
-            var map = new Map(gridHeight, gridWidth, _header.XOffset, _header.YOffset, _header.MaxX - _header.MinX, _header.MaxY - _header.MinY);
+            var map = new Map(gridHeight, gridWidth, GetZone(), physicalX, physicalY, physicalWidth, physicalHeight);
             return map;
         }
 
@@ -57,9 +61,27 @@ namespace CaveSpy
         {
             double width = _header.MaxX - _header.MinX;
             double height = _header.MaxY - _header.MinY;
-            int gridHeight = (int)(gridWidth / height * width);
-            var map = new Map(gridHeight, gridWidth, _header.MinX, _header.MinY, width, height);
+            int gridHeight = (int)(gridWidth / height * width);            
+            var map = new Map(gridHeight, gridWidth, GetZone(), _header.MinX, _header.MinY, width, height);
             return map;
+        }
+
+        private string GetZone()
+        {
+            if (_projection == null)
+                return "12T";
+            else
+            {
+                var zone = _projection.Head.properties.FirstOrDefault(p => p.Contains("zone"));
+                if (null == zone)
+                    return "12T";
+                else
+                {
+                    int index = zone.IndexOf("zone ");
+                    zone = zone.Substring(index + 5, zone.Length - index - 5);
+                    return zone;
+                }
+            }
         }
 
         public void ExtractElevationMap(Map map)
@@ -124,24 +146,138 @@ namespace CaveSpy
         }
     }
 
+    public class ProjectionData
+    {
+        private string _rawData;
+        private ProjNode _head;
+        public ProjectionData()
+        {
+
+        }
+
+        public ProjectionData(byte[] data)
+        {
+            _rawData = Encoding.UTF8.GetString(data);
+            ParseData();
+        }
+
+        public ProjNode Head { get { return _head; } }
+
+        private void ParseData()
+        {
+            int state = 0;
+            var sb = new StringBuilder();
+            var stack = new Stack<ProjNode>();
+            var currNode = _head = new ProjNode();
+            for (int i = 0; i < _rawData.Length; i++)
+            {
+                char c = _rawData[i];
+                switch (state)
+                {
+                    case 0: // slurp node name
+                        {
+                            if (char.IsLetter(c))
+                            {
+                                sb.Append(c);
+                            }
+                            else if (c == '[')
+                            {                                
+                                currNode.name = sb.ToString();
+                                sb = new StringBuilder();
+                                state = 1;
+                            }
+                        }
+                        break;
+                    case 1: // read node contents
+                        if (c == '\"')
+                            state = 2;
+                        else if (char.IsLetter(c))
+                        {
+                            stack.Push(currNode);
+                            var child = new ProjNode();
+                            currNode.children.Add(child);
+                            currNode = child;
+                            state = 0;
+                        }
+                        else if (c == ']')
+                        {
+                            currNode = stack.Pop();
+                        }
+                        else if (c == ',')
+                        {
+                        }
+                        break;
+                    case 2: // read property
+                        if (c == '"')
+                        {
+                            currNode.properties.Add(sb.ToString());
+                            sb = new StringBuilder();
+                            state = 1;
+                        }
+                        else
+                            sb.Append(c);
+                        break;
+                }
+            }
+        }
+    }
+
+
+    public class ProjNode
+    {
+        public string name;
+        public List<string> properties;
+        public List<ProjNode> children;
+
+        public ProjNode()
+        {
+            properties = new List<string>();
+            children = new List<ProjNode>();
+        }
+
+        public ProjNode(string name)
+            : this()
+        {
+
+        }
+
+        public override string ToString()
+        {
+            var props = properties.Select(p => $"\"{p}\"");
+            var cs = children.Select(c => c.ToString());
+            var combined = cs.Union(props);
+            string guts = string.Join(",", combined);
+            
+            return $"{name}[{guts}]";
+        }
+    }
+
+    [Serializable]
     class Map
     {
         private Dictionary<string, object> _properties;
-        public Map(int width, int height, double physicalX, double physicalY, double physicalWidth, double physicalHeight)
+        public Map()
+        {
+            _properties = new Dictionary<string, object>();
+        }
+
+        public Map(int width, int height, string zone, double physicalX, double physicalY, double physicalWidth, double physicalHeight)
+            : this()
         {
             this.width = width;
             this.height = height;
             this.elevations = new double[this.width * this.height];
+            this.zone = zone;
             this.physicalWidth = physicalWidth;
             this.physicalHeight = physicalHeight;
             this.physicalLeft = physicalX;
             this.physicalTop = physicalY;
             this.physicalRight = physicalX + physicalWidth;
             this.physicalBottom = physicalTop + physicalHeight;
-            _properties = new Dictionary<string, object>();
         }
 
         public double[] elevations;
+        public string zone;
         public int height;
         public int width;
         public double physicalLeft;
@@ -162,6 +298,24 @@ namespace CaveSpy
             object value;
             value = _properties[name];
             return (T)value;
+        }
+
+        public void Save(string filePath)
+        {
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                var writer = new BinaryFormatter();
+                writer.Serialize(stream, this);
+            }
+        }
+
+        public static Map Load(string filePath)
+        {
+            using (var stream = new FileStream(filePath, FileMode.Open))
+            {
+                var reader = new BinaryFormatter();
+                return (Map)reader.Deserialize(stream);
+            }
         }
     }
 }

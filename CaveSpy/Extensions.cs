@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -26,6 +27,22 @@ namespace CaveSpy
                     a(ii, xl, yl);
                 }
             }
+        }
+
+        public static string ReadString(this BinaryReader reader, int fieldLength)
+        {
+            char[] value = reader.ReadChars(fieldLength);
+            int charLength = value.Length;
+            for (int i = 0; i < value.Length; i++)
+            {
+                if (value[i] == '\0')
+                {
+                    charLength = i;
+                    break;
+                }
+            }
+
+            return new string(value, 0, charLength);
         }
     }
 }
