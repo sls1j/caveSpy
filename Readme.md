@@ -3,7 +3,7 @@ Cave Spy
 
 Reads a .LAS file, and can do some analysis on the data to help locate caves.  Then it outputs either and image or a kml overlay for Google Earth
 
-## Release [1.0.0.4](http://sls1j.ddns.net/bin/CaveSpy-1.0.0.3.zip)
+## Release [1.0.0.4](http://sls1j.ddns.net/bin/CaveSpy-1.0.0.4.zip)
 Adds option for false coloring of elevation
 
 ## Release [1.0.0.3](http://sls1j.ddns.net/bin/CaveSpy-1.0.0.3.zip)
