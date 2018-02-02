@@ -53,7 +53,7 @@ namespace CaveSpy
         public Map MakeMap(int gridWidth, double physicalX, double physicalY, double physicalWidth, double physicalHeight)
         {
             int gridHeight = (int)(gridWidth / physicalHeight * physicalWidth);
-            var map = new Map(gridHeight, gridWidth, GetZone(), physicalX, physicalY, physicalWidth, physicalHeight);
+            var map = new Map(gridHeight, gridWidth, GetZone(), physicalX, physicalY, physicalWidth, physicalHeight, _header.MaxZ, _header.MinZ);
             return map;
         }
 
@@ -62,7 +62,7 @@ namespace CaveSpy
             double width = _header.MaxX - _header.MinX;
             double height = _header.MaxY - _header.MinY;
             int gridHeight = (int)(gridWidth / height * width);            
-            var map = new Map(gridHeight, gridWidth, GetZone(), _header.MinX, _header.MinY, width, height);
+            var map = new Map(gridHeight, gridWidth, GetZone(), _header.MinX, _header.MinY, width, height, _header.MaxZ, _header.MinZ);
             return map;
         }
 
@@ -261,7 +261,7 @@ namespace CaveSpy
             _properties = new Dictionary<string, object>();
         }
 
-        public Map(int width, int height, string zone, double physicalX, double physicalY, double physicalWidth, double physicalHeight)
+        public Map(int width, int height, string zone, double physicalX, double physicalY, double physicalWidth, double physicalHeight, double maxElevation, double minElevation)
             : this()
         {
             this.width = width;
@@ -274,6 +274,8 @@ namespace CaveSpy
             this.physicalTop = physicalY;
             this.physicalRight = physicalX + physicalWidth;
             this.physicalBottom = physicalTop + physicalHeight;
+            this.maxElevation = maxElevation;
+            this.minElevation = minElevation;
         }
 
         public double[] elevations;
@@ -284,9 +286,10 @@ namespace CaveSpy
         public double physicalTop;
         public double physicalRight;
         public double physicalBottom;
-
         public double physicalWidth;
         public double physicalHeight;
+        public double maxElevation;
+        public double minElevation;
 
         public void SetProperty<T>(string name, T value)
         {

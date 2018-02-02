@@ -19,6 +19,22 @@ namespace CaveSpy
             map.SetProperty("image", image);
         }
 
+        public void AddElevation(Map map, bool color, double opacity)
+        {
+            byte[] image = map.GetProperty<byte[]>("image");
+            for (int i = 0, ii = 0; i < map.elevations.Length; i++, ii+=4)
+            {
+                double v = map.elevations[i];
+
+                byte r, g, b;
+                HueToRGB(v / 40.0, 0.8, 0.8, out r, out g, out b);
+                image[ii] = Confine((1 - opacity) * image[ii] + b * opacity);
+                image[ii + 1] = Confine((1 - opacity) * image[ii+1] + g * opacity);
+                image[ii + 2] = Confine((1 - opacity) * image[ii+2] + r * opacity);
+                
+            }
+        }
+
         public void RenderElevationImage(Map map, bool addShading, bool addElevationLightness)
         {
             byte[] image = map.GetProperty<byte[]>("image");
@@ -124,8 +140,9 @@ namespace CaveSpy
 
         private static Tuple<string, int> GetZone(string zone)
         {
-            string latZ = new string( zone[zone.Length - 1], 1 );
-            int longZ = int.Parse(zone.Substring(0, zone.Length - 1));
+
+            string latZ = zone.Substring(2, 1);
+            int longZ = int.Parse(zone.Substring(0, 2));
             return Tuple.Create(latZ, longZ);
         }
 
@@ -158,6 +175,45 @@ namespace CaveSpy
                     }
                 }
             }
+        }
+
+        private static void HueToRGB(double hue, double saturation, double lightness, out byte r, out byte g, out byte b)
+        {
+            // convert to YIQ color space
+            double Y = lightness;
+            double I = Math.Cos(hue * 2 * Math.PI) * saturation;
+            double Q = Math.Sin(hue * 2 * Math.PI) * saturation;
+
+            // convert to RGB color space
+            double cr = Y + 0.9563f * I + 0.6210f * Q;
+            double cg = Y - 0.2721f * I - 0.6474f * Q;
+            double cb = Y - 1.1070f * I + 1.7046f * Q;
+
+            // make sure each value is in the range of 0-255 range
+            r = Convert(cr);
+            g = Convert(cg);
+            b = Convert(cb);
+        }
+
+        private static byte Convert(double v)
+        {
+            double vv = v * 256;
+            if (vv < 0)
+                return 0;
+            else if (vv > 255)
+                return 255;
+            else
+                return (byte)vv;
+        }
+
+        private static byte Confine(double v)
+        {
+            if (v < 0)
+                return 0;
+            else if (v > 255)
+                return 255;
+            else
+                return (byte)v;
         }
     }
 }

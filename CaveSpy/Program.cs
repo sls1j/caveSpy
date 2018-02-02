@@ -24,6 +24,7 @@ namespace CaveSpy
             double widthMeters = 0;
             double heightMeters = 0;
             bool lookForCaves = false;
+            bool falseElevationColoring = false;
 
             for (int i = 0; i < args.Length; i++)
             {
@@ -39,6 +40,7 @@ namespace CaveSpy
                     case "--height": useBounds = true; heightMeters = double.Parse(args[++i]); break;
                     case "--image-size": imageSize = int.Parse(args[++i]); break;
                     case "--look-for-caves": lookForCaves = true; break;
+                    case "--false-elevation-coloring": falseElevationColoring = true; break;
                 }
             }
 
@@ -46,7 +48,7 @@ namespace CaveSpy
             {
                 PrintError("Invalid or missing parameters.");
                 return;
-            }            
+            }
 
             try
             {
@@ -85,6 +87,12 @@ namespace CaveSpy
                 var img = new Imaging();
                 img.MakeImage(map);
                 img.RenderElevationImage(map, true, false);
+
+                if (falseElevationColoring)
+                {
+                    img.AddElevation(map, true, 0.4);
+                }
+
                 if (lookForCaves)
                 {
                     CaveFinder finder = new CaveFinder();
@@ -99,7 +107,7 @@ namespace CaveSpy
             }
 
             Console.WriteLine($"Processing time: {DateTime.UtcNow - startTime}");
-            if ( Debugger.IsAttached )
+            if (Debugger.IsAttached)
                 Console.ReadKey();
         }
 
@@ -109,13 +117,14 @@ namespace CaveSpy
             Console.WriteLine("CaveSpy.exe --input <input .las file> --output <output.bmp> --image-size <size in pixels> [--top <GPS coord in UTM> --left <GPS coord in UTM> --width <meters> --height <meters>] [--look-for-caves] [--flood <flood depth in meters>]");
             Console.WriteLine("--input - the file name of the .las or a .map file that will be read in");
             Console.WriteLine("--output - the name of the output that will be written to disk.  Supports format .bmp, .kml, and .map (a intermediate format for CaveSpy)");
+            Console.WriteLine("--image-size -- the number of pixels wide the image will be.  The height will be chosen to preserve the aspect ratio.");
             Console.WriteLine("--top -- the northing UTM coordinate of the corner of the map (south,west corner)");
             Console.WriteLine("--left -- the easting UTM coordinate of the corner of the map (south,west corner)");
             Console.WriteLine("--width -- the distance in meters the area will stretch toward the east");
             Console.WriteLine("--height -- the distance in meters the area will stretch toward the north");
-            Console.WriteLine("--image-size -- the number of pixels wide the image will be.  The height will be chosen to preserve the aspect ratio.");
             Console.WriteLine("--flood - the depth in meters that the finding algorithm will use to find pits");
             Console.WriteLine("--look-for-caves -- if present then it will apptempt too look for caves using the flood method");
+            Console.WriteLine("--false-elevation-coloring -- if present then coloring representing elevation will be added.");
         }
     }
 }
