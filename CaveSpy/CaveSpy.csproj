@@ -8,9 +8,10 @@
     <OutputType>Exe</OutputType>
     <RootNamespace>CaveSpy</RootNamespace>
     <AssemblyName>CaveSpy</AssemblyName>
-    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -57,13 +58,29 @@
     <Compile Include="PointCloud.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ScriptEngine.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="default.lisp" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="kmlTemplate.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Utility\Extensions\Extensions.csproj">
+      <Project>{09fc6d20-e03f-426c-8922-10e91427beec}</Project>
+      <Name>Extensions</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Utility\Logging\Logging.csproj">
+      <Project>{52c36514-cd5d-4f68-88c5-8fe03c48ce06}</Project>
+      <Name>Logging</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Utility\Scripting.Lisp\Scripting.Lisp.csproj">
+      <Project>{73667948-656c-4623-9c56-11f80c71e152}</Project>
+      <Name>Scripting.Lisp</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

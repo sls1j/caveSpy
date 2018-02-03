@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using Bee.Eee.Utility.Logging;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -13,6 +14,10 @@ namespace CaveSpy
     {
         static void Main(string[] args)
         {
+            //ILogger logger = new ConsoleLogger("Main");
+            //ScriptEngine se = new ScriptEngine(logger);
+            //se.RunScript("default.lisp");
+
             DateTime startTime = DateTime.UtcNow;
             string input = "";
             string output = "";
@@ -43,6 +48,7 @@ namespace CaveSpy
                     case "--false-elevation-coloring": falseElevationColoring = true; break;
                 }
             }
+
 
             if (string.IsNullOrEmpty(input) || string.IsNullOrEmpty(output))
             {

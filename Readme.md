@@ -43,6 +43,7 @@ CaveSpy.exe --input <input .las file> --output <output.bmp> --image-size <size i
 ```
 
 ## Roadmap
+* Add a scripting language to make it easier to configure
 * Add directionality and intensity to the hillshading
 * Add false coloring for slope angle
 * Add the ability to use the colors supplied from LIDAR in LAS point format 2 and 3
