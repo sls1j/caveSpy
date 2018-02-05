@@ -21,7 +21,7 @@ namespace Bee.Eee.Utility.Scripting.Lisp
         public LispExecuter(ILogger logger)
         {
             _logger = logger.CreateSub("Lisp");
-            _logger.RegisterCategory(Categories.ScriptLogging, "Script Logging");
+            _logger.RegisterCategory(Categories.ScriptLogging, "Script Logging");            
 
             _env = new Dictionary<string, string>();
             _var = new Dictionary<string, object>();
@@ -72,7 +72,7 @@ namespace Bee.Eee.Utility.Scripting.Lisp
             executer.SetEnvironment(environmentVariables);
             try
             {
-                executer.Run(program);
+                executer.Run<object>(program);
             }
             catch (Exception ex)
             {
@@ -88,16 +88,24 @@ namespace Bee.Eee.Utility.Scripting.Lisp
 
         public object Run(LispItem item)
         {
-            if (item is LispList)
-                return RunList(item as LispList);
-            else if (item is LispValue)
-                return (item as LispValue).value;
-            else if (item is LispLong)
-                return (item as LispLong).value;
-            else if (item is LispSymbol)
-                return (item as LispSymbol).name;
-            else
-                return null;
+            object v = null;
+            switch (item)
+            {
+                case LispList ll: v = RunList(ll); break;
+                case LispString ls: v = ls.value; break;
+                case LispDouble ld: v = ld.value; break;
+                case LispInt li: v = li.value; break;
+                case LispSymbol lsym: v = lsym.name; break;
+                default:v = null;break;
+            }
+
+            return v;
+        }
+
+        public T Run<T>(LispItem item)
+        {
+            object v = this.Run(item);
+            return (T)v;
         }
 
         public object RunList(LispList program)

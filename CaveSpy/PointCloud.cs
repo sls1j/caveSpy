@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Bee.Eee.Utility.Logging;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -8,140 +9,100 @@ using System.Threading.Tasks;
 
 namespace CaveSpy
 {
-    class PointCloud : IDisposable
+    [Serializable]
+    class PointCloud
     {
-        FileStream _fin;
-        BinaryReader _reader;
         PointCloudHeader _header;
         ProjectionData _projection;
+        PointData[] _points;
+        ILogger _logger;
 
-        public PointCloud(string path)
+        public PointCloud(ILogger logger)
         {
-            _fin = new FileStream(path, FileMode.Open);
-            _reader = new BinaryReader(_fin);
-            _header = new PointCloudHeader(_reader);
-            var rawRrojectionData = _header.VarHeaders.FirstOrDefault(h => h.Description == "OGR variant of OpenGIS WKT SRS");
-            if (null == rawRrojectionData)
-                _projection = new ProjectionData();
-            else
-                _projection = new ProjectionData(rawRrojectionData.Data);
+            _logger = (logger != null) ? logger.CreateSub("PointCloud") : throw new ArgumentNullException("logger");
         }
 
         public PointCloudHeader Header { get { return _header; } }
         public ProjectionData Projection { get { return _projection; } }
 
-        public void Dispose()
+        public PointData[] Points { get { return _points; } }
+
+        public void LoadFromLas(string path)
         {
-            try
+            using (FileStream fileStream = new FileStream(path, FileMode.Open))
+            using (var reader = new BinaryReader(fileStream))
             {
-                if (_reader != null)
-                    _reader.Dispose();
+                _header = new PointCloudHeader(reader);
+                var rawRrojectionData = _header.VarHeaders.FirstOrDefault(h => h.Description == "OGR variant of OpenGIS WKT SRS");
+                if (null == rawRrojectionData)
+                    _projection = new ProjectionData();
+                else
+                    _projection = new ProjectionData(rawRrojectionData.Data);
 
-                if (_fin != null)
-                    _fin.Dispose();
 
-                _reader = null;
-                _fin = null;
+                // reset the file position
+                fileStream.Seek(_header.OffsetToPointData, SeekOrigin.Begin);
+
+                Action<PointData, BinaryReader> readFunc;
+                switch (_header.PointDataFormat)
+                {
+                    case 1: readFunc = PointData.ReadFormat1; break;
+                    case 2: readFunc = PointData.ReadFormat2; break;
+                    case 3: readFunc = PointData.ReadFormat3; break;
+                    default:
+                        throw new NotImplementedException($"Format {_header.PointDataFormat} not supported.");
+                }
+
+                _points = new PointData[_header.NumberOfPointRecords];
+                for (var i = 0; i < _header.NumberOfPointRecords; i++)
+                {
+                    var pd = new PointData();
+                    readFunc(pd, reader);
+                    _points[i] = pd;
+                }
             }
-            catch (Exception)
+        }
+
+
+        public string Zone
+        {
+            get
             {
-            }
-
-            GC.SuppressFinalize(this);
-        }
-
-        public Map MakeMap(int gridWidth, double physicalX, double physicalY, double physicalWidth, double physicalHeight)
-        {
-            int gridHeight = (int)(gridWidth / physicalHeight * physicalWidth);
-            var map = new Map(gridHeight, gridWidth, GetZone(), physicalX, physicalY, physicalWidth, physicalHeight, _header.MaxZ, _header.MinZ);
-            return map;
-        }
-
-        public Map MakeMap(int gridWidth)
-        {
-            double width = _header.MaxX - _header.MinX;
-            double height = _header.MaxY - _header.MinY;
-            int gridHeight = (int)(gridWidth / height * width);            
-            var map = new Map(gridHeight, gridWidth, GetZone(), _header.MinX, _header.MinY, width, height, _header.MaxZ, _header.MinZ);
-            return map;
-        }
-
-        private string GetZone()
-        {
-            if (_projection == null)
-                return "12T";
-            else
-            {
-                var zone = _projection.Head.properties.FirstOrDefault(p => p.Contains("zone"));
-                if (null == zone)
+                if (_projection == null || _projection.Head == null)
+                {
+                    _logger.Log(Level.Warn, "Zone not found in the Projection data. Assuming UTM zone of 12T.  The kml will not likely be in the correct place!");
                     return "12T";
+                }
                 else
                 {
-                    int index = zone.IndexOf("zone ");
-                    zone = zone.Substring(index + 5, zone.Length - index - 5);
-                    return zone;
-                }
-            }
-        }
-
-        public void ExtractElevationMap(Map map)
-        {
-            // reset the file position
-            _fin.Seek(_header.OffsetToPointData, SeekOrigin.Begin);
-
-            Action<PointDataRecordFormat, BinaryReader> readFunc;
-            switch (_header.PointDataFormat)
-            {
-                case 1: readFunc = PointDataRecordFormat.ReadFormat1; break;
-                case 2: readFunc = PointDataRecordFormat.ReadFormat2; break;
-                case 3: readFunc = PointDataRecordFormat.ReadFormat3; break;
-                default:
-                    throw new NotImplementedException($"Format {_header.PointDataFormat} not supported.");
-            }
-
-            double[] elevations = map.elevations;
-
-            double xScale = (double)(map.width - 1) / map.physicalWidth;
-            double yScale = (double)(map.height - 1) / map.physicalHeight;
-            double minX = map.physicalLeft;
-            double minY = map.physicalTop;
-
-            for (int i = 0; i < _header.NumberOfPointRecords; i++)
-            {
-                if (i % 1000000 == 0)
-                    Console.WriteLine($"{i:0,000}/{_header.NumberOfPointRecords:0,000} {(double)i / (double)_header.NumberOfPointRecords * 100: 0.00}");
-
-                var p = new PointDataRecordFormat();
-                readFunc(p, _reader);
-
-                double x = p.X * _header.XScaleFactor + _header.XOffset;
-                double y = p.Y * _header.YScaleFactor + _header.YOffset;
-                double z = p.Z * _header.ZScaleFactor + _header.ZOffset;
-
-                // skip if not in area of interest
-                if (x < map.physicalLeft || x > map.physicalRight || y < map.physicalTop || y > map.physicalBottom)
-                    continue;
-
-                int xi = (int)((x - minX) * xScale);
-                int yi = map.height - (int)((y - minY) * yScale) - 1;
-                elevations[yi * map.width + xi] = z;
-            }
-        }
-
-        public void FillMap(Map map)
-        {
-            int i = 0;
-            double lastValue = 0;
-            for (int y = 0; y < map.height; y++)
-            {
-                for (int x = 0; x < map.width; x++, i++)
-                {
-                    double v = map.elevations[i];
-                    if (v == 0)
-                        map.elevations[i] = lastValue;
+                    var zone = _projection.Head.properties.FirstOrDefault(p => p.Contains("zone"));
+                    if (null == zone)
+                        return "12T";
                     else
-                        lastValue = v;
+                    {
+                        int index = zone.IndexOf("zone ");
+                        zone = zone.Substring(index + 5, zone.Length - index - 5);
+                        return zone;
+                    }
                 }
+            }
+        }     
+
+        public void Save(string filePath)
+        {
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                var writer = new BinaryFormatter();
+                writer.Serialize(stream, this);
+            }
+        }
+
+        public static PointCloud Load(string filePath)
+        {
+            using (var stream = new FileStream(filePath, FileMode.Open))
+            {
+                var reader = new BinaryFormatter();
+                return (PointCloud)reader.Deserialize(stream);
             }
         }
     }
@@ -181,7 +142,7 @@ namespace CaveSpy
                                 sb.Append(c);
                             }
                             else if (c == '[')
-                            {                                
+                            {
                                 currNode.name = sb.ToString();
                                 sb = new StringBuilder();
                                 state = 1;
@@ -222,7 +183,7 @@ namespace CaveSpy
         }
     }
 
-
+    [Serializable]
     public class ProjNode
     {
         public string name;
@@ -247,78 +208,195 @@ namespace CaveSpy
             var cs = children.Select(c => c.ToString());
             var combined = cs.Union(props);
             string guts = string.Join(",", combined);
-            
+
             return $"{name}[{guts}]";
         }
     }
 
+    // Define other methods and classes here
     [Serializable]
-    class Map
+    class PointCloudHeader
     {
-        private Dictionary<string, object> _properties;
-        public Map()
+        public char[] FileSignature; // 4 bytes
+        public ushort FileSourceID;
+        public ushort GlobalEncoding;
+        public byte[] ProjectID;
+        public byte VersionMajor;
+        public byte VersionMinor;
+        public byte[] SystemIdentifier; // 32 bytes
+        public char[] GeneratingSoftware; // 32 bytes;
+        public ushort FileCreationDayOfYear;
+        public ushort FileCreationYear;
+        public ushort HeaderSize;
+        public uint OffsetToPointData;
+        public uint NumberOfVariableLengthRecords;
+        public byte PointDataFormat;
+        public ushort PointDataRecordLength;
+        public uint NumberOfPointRecords;
+        public uint[] NumberOfPointsByReturn; // size 5 -- 20 bytes
+        public double XScaleFactor;
+        public double YScaleFactor;
+        public double ZScaleFactor;
+        public double XOffset;
+        public double YOffset;
+        public double ZOffset;
+        public double MaxX;
+        public double MinX;
+        public double MaxY;
+        public double MinY;
+        public double MaxZ;
+        public double MinZ;
+        public List<PointCloudVariableLengthHeader> VarHeaders;
+
+        public PointCloudHeader()
         {
-            _properties = new Dictionary<string, object>();
+            VarHeaders = new List<PointCloudVariableLengthHeader>();
         }
 
-        public Map(int width, int height, string zone, double physicalX, double physicalY, double physicalWidth, double physicalHeight, double maxElevation, double minElevation)
+        public PointCloudHeader(BinaryReader r)
             : this()
         {
-            this.width = width;
-            this.height = height;
-            this.elevations = new double[this.width * this.height];
-            this.zone = zone;
-            this.physicalWidth = physicalWidth;
-            this.physicalHeight = physicalHeight;
-            this.physicalLeft = physicalX;
-            this.physicalTop = physicalY;
-            this.physicalRight = physicalX + physicalWidth;
-            this.physicalBottom = physicalTop + physicalHeight;
-            this.maxElevation = maxElevation;
-            this.minElevation = minElevation;
+            Read(r);
         }
 
-        public double[] elevations;
-        public string zone;
-        public int height;
-        public int width;
-        public double physicalLeft;
-        public double physicalTop;
-        public double physicalRight;
-        public double physicalBottom;
-        public double physicalWidth;
-        public double physicalHeight;
-        public double maxElevation;
-        public double minElevation;
-
-        public void SetProperty<T>(string name, T value)
+        void Read(BinaryReader reader)
         {
-            _properties[name] = (object)value;
-        }
-
-        public T GetProperty<T>(string name)
-        {
-            object value;
-            value = _properties[name];
-            return (T)value;
-        }
-
-        public void Save(string filePath)
-        {
-            using (var stream = new FileStream(filePath, FileMode.Create))
+            FileSignature = reader.ReadChars(4);
+            FileSourceID = reader.ReadUInt16();
+            GlobalEncoding = reader.ReadUInt16();
+            ProjectID = reader.ReadBytes(16);
+            VersionMajor = reader.ReadByte();
+            VersionMinor = reader.ReadByte();
+            SystemIdentifier = reader.ReadBytes(32);
+            GeneratingSoftware = reader.ReadChars(32);
+            FileCreationDayOfYear = reader.ReadUInt16();
+            FileCreationYear = reader.ReadUInt16();
+            HeaderSize = reader.ReadUInt16();
+            OffsetToPointData = reader.ReadUInt32();
+            NumberOfVariableLengthRecords = reader.ReadUInt32();
+            PointDataFormat = reader.ReadByte();
+            PointDataRecordLength = reader.ReadUInt16();
+            NumberOfPointRecords = reader.ReadUInt32();
+            NumberOfPointsByReturn = new uint[5];
+            for (int i = 0; i < 5; i++)
             {
-                var writer = new BinaryFormatter();
-                writer.Serialize(stream, this);
+                NumberOfPointsByReturn[i] = reader.ReadUInt32();
+            }
+            XScaleFactor = reader.ReadDouble();
+            YScaleFactor = reader.ReadDouble();
+            ZScaleFactor = reader.ReadDouble();
+            XOffset = reader.ReadDouble();
+            YOffset = reader.ReadDouble();
+            ZOffset = reader.ReadDouble();
+            MaxX = reader.ReadDouble();
+            MinX = reader.ReadDouble();
+            MaxY = reader.ReadDouble();
+            MinY = reader.ReadDouble();
+            MaxZ = reader.ReadDouble();
+            MinZ = reader.ReadDouble();
+            for (int i = 0; i < this.NumberOfVariableLengthRecords; i++)
+            {
+                var vh = new PointCloudVariableLengthHeader(reader);
+                VarHeaders.Add(vh);
             }
         }
+    }
 
-        public static Map Load(string filePath)
+    [Serializable]
+    class PointData
+    {
+        public int X;
+        public int Y;
+        public int Z;
+        public ushort Intensity;
+        public byte ReturnBits; // 0-2 ReturnNumber, 3-5 NumberOfReturns, 6 Scan Direction Flag, 7 Edige of Flight Line
+        public byte Classification;
+        public byte ScanAngleRank;
+        public byte UserData;
+        public ushort PointSourceID;
+        public double GPSTime;
+        public ushort Red;
+        public ushort Green;
+        public ushort Blue;
+
+        public static void ReadFormat1(PointData p, BinaryReader reader)
         {
-            using (var stream = new FileStream(filePath, FileMode.Open))
-            {
-                var reader = new BinaryFormatter();
-                return (Map)reader.Deserialize(stream);
-            }
+            p.X = reader.ReadInt32();
+            p.Y = reader.ReadInt32();
+            p.Z = reader.ReadInt32();
+            p.Intensity = reader.ReadUInt16();
+            p.ReturnBits = reader.ReadByte();
+            p.Classification = reader.ReadByte();
+            p.ScanAngleRank = reader.ReadByte();
+            p.UserData = reader.ReadByte();
+            p.PointSourceID = reader.ReadUInt16();
+            p.GPSTime = reader.ReadDouble();
+        }
+
+        public static void ReadFormat2(PointData p, BinaryReader reader)
+        {
+            p.X = reader.ReadInt32();
+            p.Y = reader.ReadInt32();
+            p.Z = reader.ReadInt32();
+            p.Intensity = reader.ReadUInt16();
+            p.ReturnBits = reader.ReadByte();
+            p.Classification = reader.ReadByte();
+            p.ScanAngleRank = reader.ReadByte();
+            p.UserData = reader.ReadByte();
+            p.PointSourceID = reader.ReadUInt16();
+            p.GPSTime = reader.ReadDouble();
+            p.Red = reader.ReadUInt16();
+            p.Green = reader.ReadUInt16();
+            p.Blue = reader.ReadUInt16();
+        }
+
+        public static void ReadFormat3(PointData p, BinaryReader reader)
+        {
+            p.X = reader.ReadInt32();
+            p.Y = reader.ReadInt32();
+            p.Z = reader.ReadInt32();
+            p.Intensity = reader.ReadUInt16();
+            p.ReturnBits = reader.ReadByte();
+            p.Classification = reader.ReadByte();
+            p.ScanAngleRank = reader.ReadByte();
+            p.UserData = reader.ReadByte();
+            p.PointSourceID = reader.ReadUInt16();
+            p.GPSTime = reader.ReadDouble();
+            p.Red = reader.ReadUInt16();
+            p.Green = reader.ReadUInt16();
+            p.Blue = reader.ReadUInt16();
+        }
+    }
+
+    [Serializable]
+    public class PointCloudVariableLengthHeader
+    {
+        public ushort Reserved;
+        public string UserId; // 16 bytes
+        public ushort RecordId;
+        public ushort RecordLengthAfterHeader;
+        public string Description;
+        public byte[] Data;
+
+        public PointCloudVariableLengthHeader()
+        {
+
+        }
+
+        public PointCloudVariableLengthHeader(BinaryReader reader)
+            : this()
+        {
+            Read(reader);
+        }
+
+        public void Read(BinaryReader reader)
+        {
+            Reserved = reader.ReadUInt16();
+            UserId = reader.ReadString(16);
+            RecordId = reader.ReadUInt16();
+            RecordLengthAfterHeader = reader.ReadUInt16();
+            Description = reader.ReadString(32);
+            Data = reader.ReadBytes(RecordLengthAfterHeader);
         }
     }
 }

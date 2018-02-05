@@ -37,7 +37,7 @@ namespace Bee.Eee.Utility.Scripting.Lisp
                         // eat the comment comment until we find a new line.
                         int newIndex = lispString.IndexOf('\n', i);
                         if (newIndex > 0)
-                            i = newIndex-1;
+                            i = newIndex - 1;
                         else
                             i = lispString.Length;
                         break;
@@ -88,26 +88,45 @@ namespace Bee.Eee.Utility.Scripting.Lisp
                                         break;
                                 }
                                 tokens.Add(new LispToken() { type = TokenType.Symbol, value = lispString.Substring(i, index - i), line = line, position = position });
-                                position += (index - 1)-i;
-                                i = index-1;
+                                position += (index - 1) - i;
+                                i = index - 1;
                             }
-                            else if (char.IsDigit(c))
+                            else if (char.IsDigit(c) || c == '.')
                             {
                                 // it's a number
                                 int index;
                                 for (index = i; index < lispString.Length; index++)
                                 {
                                     char cc = lispString[index];
-                                    if (!char.IsLetterOrDigit(cc))
+                                    if (!(char.IsLetterOrDigit(cc) || cc == '.'))
                                         break;
                                 }
-                                
-                                string strValue = lispString.Substring(i, index - i);
-                                long lValue;
-                                if (long.TryParse(strValue, out lValue))
-                                    tokens.Add(new LispToken() { type = TokenType.Number, value = strValue, lValue = lValue, line = line, position = position });
-                                else
-                                    throw new LispParseException("Not a valid number. Line: {0}:{1}", line, position);
+
+                                char typeValue = lispString[index - 1];
+                                string strValue = lispString.Substring(i, index - i - 1);
+                                switch (typeValue)
+                                {
+                                    case 'd':
+                                        {
+                                            double lValue;
+                                            if (double.TryParse(strValue, out lValue))
+                                                tokens.Add(new LispToken() { type = TokenType.Double, value = strValue, lValue = lValue, line = line, position = position });
+                                            else
+                                                throw new LispParseException("Not a valid double. Line: {0}:{1}", line, position);
+                                            break;
+                                        }
+                                    case 'i':
+                                        {
+                                            int lValue;
+                                            if (int.TryParse(strValue, out lValue))
+                                                tokens.Add(new LispToken() { type = TokenType.Int, value = strValue, lValue = lValue, line = line, position = position });
+                                            else
+                                                throw new LispParseException("Not a valid int. Line: {0}:{1}", line, position);
+                                        }
+                                        break;
+                                    default:
+                                        throw new LispParseException($"Not a valid number type. Line:{line},{position}");
+                                }
 
                                 position += (index - 1) - i;
                                 i = index - 1;
@@ -128,40 +147,42 @@ namespace Bee.Eee.Utility.Scripting.Lisp
             int token_index = 0;
             LispList root = new LispList(tokens, ref token_index);
             return root;
-        }        
+        }
 
     }
 
-    internal enum TokenType { ParamLeft, ParamRight, Symbol, String, Number };
+    internal enum TokenType { ParamLeft, ParamRight, Symbol, String, Double, Int };
 
     internal class LispToken
     {
-            public TokenType type;
-            public string value; // string value
-            public object lValue; // literal value
-            public int line;
-            public int position;
+        public TokenType type;
+        public string value; // string value
+        public object lValue; // literal value
+        public int line;
+        public int position;
 
-            public override string ToString()
+        public override string ToString()
+        {
+            switch (type)
             {
-                switch (type)
-                {
-                    case TokenType.ParamLeft:
-                    case TokenType.ParamRight:
-                        return type.ToString();
-                    case TokenType.String:
-                        return string.Format("STR: '{0}'", value);
-                    case TokenType.Symbol:
-                        return string.Format("SYM: '{0}'", value);
-                    case TokenType.Number:
-                        return string.Format("NUM: '{0}'", value);
-                }
-
-                return base.ToString();
+                case TokenType.ParamLeft:
+                case TokenType.ParamRight:
+                    return type.ToString();
+                case TokenType.String:
+                    return string.Format("STR: '{0}'", value);
+                case TokenType.Symbol:
+                    return string.Format("SYM: '{0}'", value);
+                case TokenType.Double:
+                    return string.Format("DBL: '{0}'", value);
+                case TokenType.Int:
+                    return string.Format("INT: '{0}'", value);
             }
+
+            return base.ToString();
+        }
     }
 
-    public class LispItem 
+    public class LispItem
     {
         public int line;
         public int position;
@@ -177,16 +198,25 @@ namespace Bee.Eee.Utility.Scripting.Lisp
 
     }
 
-    public class LispLong : LispItem
+    public class LispInt : LispItem
     {
-        public long value;
+        public int value;
         public override string ToString()
         {
-            return string.Format("Long: '{0}'", value);
+            return $"Int: '{value}'";
         }
     }
 
-    public class LispValue : LispItem
+    public class LispDouble : LispItem
+    {
+        public double value;
+        public override string ToString()
+        {
+            return string.Format("Double: '{0}'", value);
+        }
+    }
+
+    public class LispString : LispItem
     {
         public string value;
         public override string ToString()
@@ -206,8 +236,8 @@ namespace Bee.Eee.Utility.Scripting.Lisp
 
         internal LispList(List<LispToken> tokens, ref int index)
         {
-            Init();   
-            if ( index >= tokens.Count)
+            Init();
+            if (index >= tokens.Count)
                 throw new LispParseException("Consturctor called but no tokens to parse!");
 
             // check for left paranthesies
@@ -218,10 +248,10 @@ namespace Bee.Eee.Utility.Scripting.Lisp
             bool notFoundEnd = true;
             index++;
 
-            for( ; index < tokens.Count && notFoundEnd; index++ )
+            for (; index < tokens.Count && notFoundEnd; index++)
             {
                 token = tokens[index];
-                switch( token.type )
+                switch (token.type)
                 {
                     case TokenType.ParamLeft:
                         LispList lst = new LispList(tokens, ref index);
@@ -233,17 +263,20 @@ namespace Bee.Eee.Utility.Scripting.Lisp
                         notFoundEnd = false;
                         index--;
                         break;
-                    case TokenType.Number:
-                        items.Add(new LispLong() { value = (long)token.lValue, line = token.line, position = token.position });
+                    case TokenType.Double:
+                        items.Add(new LispDouble() { value = (double)token.lValue, line = token.line, position = token.position });
+                        break;
+                    case TokenType.Int:
+                        items.Add(new LispInt() { value = (int)token.lValue, line = token.line, position = token.position });
                         break;
                     case TokenType.String:
-                        items.Add(new LispValue() { value = token.value, line = token.line, position = token.position });
+                        items.Add(new LispString() { value = token.value, line = token.line, position = token.position });
                         break;
                     case TokenType.Symbol:
                         items.Add(new LispSymbol() { name = token.value, line = token.line, position = token.position });
                         break;
                 }
-            }                        
+            }
         }
 
         private void Init()
@@ -261,7 +294,7 @@ namespace Bee.Eee.Utility.Scripting.Lisp
         public void StringBuildList(StringBuilder sb, int indent)
         {
             // do the indent
-            sb.Append(BuildIndent(indent));            
+            sb.Append(BuildIndent(indent));
             sb.AppendLine("LST:");
 
             foreach (LispItem item in items)
@@ -279,7 +312,7 @@ namespace Bee.Eee.Utility.Scripting.Lisp
         private string BuildIndent(int indent)
         {
             StringBuilder sb = new StringBuilder();
-            for(int i=0; i < indent; i++ )
+            for (int i = 0; i < indent; i++)
                 sb.Append("  |");
             if (indent > 0)
                 sb.Append("-");
@@ -290,14 +323,14 @@ namespace Bee.Eee.Utility.Scripting.Lisp
     [Serializable]
     public class LispParseException : Exception
     {
-        public LispParseException(string message):base(message)
+        public LispParseException(string message) : base(message)
         {
 
         }
 
-        public LispParseException(string frmtStr, params object[] args):base(string.Format(frmtStr,args))
-	    {
+        public LispParseException(string frmtStr, params object[] args) : base(string.Format(frmtStr, args))
+        {
 
-	    }
+        }
     }
 }
