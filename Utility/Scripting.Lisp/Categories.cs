@@ -5,8 +5,8 @@ using System.Text;
 
 namespace Bee.Eee.Utility.Scripting.Lisp
 {
-    public static class Categories
+    public interface ICategories
     {
-        public const int ScriptLogging = 1000;
+        int ScriptLogging { get; }
     }
 }

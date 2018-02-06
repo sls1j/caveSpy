@@ -72,7 +72,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="DebugFilters.cs" />
+    <Compile Include="Categories.cs" />
     <Compile Include="LispExecuter.cs" />
     <Compile Include="LispParser.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

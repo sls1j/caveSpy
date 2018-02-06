@@ -12,11 +12,9 @@ namespace CaveSpy
 {
     class ScriptEngine : LispExecuter
     {
-        public ScriptEngine(ILogger logger)
-            : base(logger)
-        {
-            logger.SetEnabledCategories(new int[] { Categories.ScriptLogging });
-
+        public ScriptEngine(ILogger logger, ICategories categories)
+            : base(logger, categories)
+        {            
             RegisterCommand("GetArg", Run_GetArg);
             RegisterCommand("Assert", Run_Assert);
             RegisterCommand("GetExtension", Run_GetExtension);

@@ -14,14 +14,16 @@ namespace Bee.Eee.Utility.Scripting.Lisp
     public class LispExecuter
     {
         private ILogger _logger;
+        private ICategories _categories;
         private Dictionary<string, string> _env;
         private Dictionary<string, object> _var;
         private Dictionary<string, LispRuntimeCommand> _commands;
 
-        public LispExecuter(ILogger logger)
+        public LispExecuter(ILogger logger, ICategories categories)
         {
             _logger = logger.CreateSub("Lisp");
-            _logger.RegisterCategory(Categories.ScriptLogging, "Script Logging");            
+            _categories = categories ?? throw new ArgumentNullException(nameof(categories));
+            _logger.RegisterCategory(_categories.ScriptLogging, "Script Logging");            
 
             _env = new Dictionary<string, string>();
             _var = new Dictionary<string, object>();
@@ -62,13 +64,13 @@ namespace Bee.Eee.Utility.Scripting.Lisp
             else
             {
                 _commands.Add(command.CommandName, command);
-                _logger.LogIf(Categories.ScriptLogging, Level.Debug, "Registered command: {0}", command.CommandName);
+                _logger.LogIf(_categories.ScriptLogging, Level.Debug, "Registered command: {0}", command.CommandName);
             }
         }
 
-        public static void Execute(LispList program, Dictionary<string, string> environmentVariables, ILogger logger)
+        public static void Execute(LispList program, Dictionary<string, string> environmentVariables, ILogger logger, ICategories categories)
         {
-            LispExecuter executer = new LispExecuter(logger);
+            LispExecuter executer = new LispExecuter(logger, categories);
             executer.SetEnvironment(environmentVariables);
             try
             {
@@ -123,7 +125,7 @@ namespace Bee.Eee.Utility.Scripting.Lisp
                     if (_commands.TryGetValue(sym.name, out cmd))
                     {
                         result = cmd.Command(cmd, program);
-                        _logger.LogIf(Categories.ScriptLogging, Level.Debug, "Run {0}:{1} Cmd:{2}==>{3}",
+                        _logger.LogIf(_categories.ScriptLogging, Level.Debug, "Run {0}:{1} Cmd:{2}==>{3}",
                             first.line, first.position,
                             cmd.CommandName, (result ?? (object)"null").ToString());
                     }
