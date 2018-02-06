@@ -27,7 +27,7 @@ namespace CaveSpy
             meta = new Dictionary<string, object>();
         }
 
-        public void DrawHillshade(Map map, double heading, double step, double intensity)
+        public void DrawHillshade(Map map, double heading, double step, double intensity, double opacity)
         {
             double headingRad = heading * Math.PI / 180;
             int vectorX = (int)(step * Math.Cos(headingRad));
@@ -49,13 +49,15 @@ namespace CaveSpy
 
                     int iii = ii * 4;
                     byte c = ConvertToByteColor(m * intensity + 0.5);
-                    image[iii] = c;
-                    image[iii + 1] = c;
-                    image[iii + 2] = c;
+                    image[iii] = Mix(image[iii], c, opacity);
+                    image[iii + 1] = Mix(image[iii+1], c, opacity);
+                    image[iii + 2] = Mix(image[iii+2], c, opacity);
                     image[iii + 3] = 255;
                 }
             }
         }
+
+       
 
         public void DrawCaves(List<Cave> caves, double opacity)
         {
@@ -63,13 +65,32 @@ namespace CaveSpy
             {
                 var cave = caves[i];
                 int ii = (int)(cave.X + cave.Y * width) * 4;
-                image[ii] = 0;
-                image[ii + 1] = 0;
-                image[ii + 2] = 255;
+                image[ii] = Mix(image[ii], 0, opacity);
+                image[ii + 1] = Mix(image[ii+1], 0, opacity);
+                image[ii + 2] = Mix(image[ii+2], 255, opacity);
             }
         }
 
-        byte ConvertToByteColor(double v)
+        public void DrawElevationColor(Image img, Map map, double spacing, double opacity)
+        {            
+            for (int i = 0, ii = 0; i < map.elevations.Length; i++, ii += 4)
+            {
+                double v = map.elevations[i];
+
+                byte r, g, b;
+                HueToRGB(v / 40.0, 0.8, 0.8, out r, out g, out b);
+                image[ii] = Mix(image[ii], b, opacity);
+                image[ii + 1] = Mix(image[ii+1], g, opacity);
+                image[ii + 2] = Mix(image[ii+2], r, opacity);
+            }
+        }
+
+        private static byte Mix(byte a, byte b, double opacity)
+        {
+            return ClipToByteColor(a * (1 - opacity) + b * (opacity));
+        }
+
+        private static byte ConvertToByteColor(double v)
         {
             v *= 256;
             if (v < 0)
@@ -80,7 +101,7 @@ namespace CaveSpy
                 return (byte)v;
         }
 
-        byte ClipToByteColor(double v)
+        private static byte ClipToByteColor(double v)
         {
             if (v < 0)
                 return 0;
@@ -89,7 +110,25 @@ namespace CaveSpy
             else
                 return (byte)v;
         }
-      
+
+        private static void HueToRGB(double hue, double saturation, double lightness, out byte r, out byte g, out byte b)
+        {
+            // convert to YIQ color space
+            double Y = lightness;
+            double I = Math.Cos(hue * 2 * Math.PI) * saturation;
+            double Q = Math.Sin(hue * 2 * Math.PI) * saturation;
+
+            // convert to RGB color space
+            double cr = Y + 0.9563f * I + 0.6210f * Q;
+            double cg = Y - 0.2721f * I - 0.6474f * Q;
+            double cb = Y - 1.1070f * I + 1.7046f * Q;
+
+            // make sure each value is in the range of 0-255 range
+            r = ConvertToByteColor(cr);
+            g = ConvertToByteColor(cg);
+            b = ConvertToByteColor(cb);
+        }
+
         public void Save(string path)
         {
             string ext = Path.GetExtension(path);
@@ -204,5 +243,7 @@ namespace CaveSpy
                 }
             }
         }
+
+       
     }
 }

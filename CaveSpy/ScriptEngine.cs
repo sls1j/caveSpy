@@ -123,7 +123,7 @@ namespace CaveSpy
                 case PointCloud pc:
                     {
                         CheckParameterCount(cmd, list, 2);
-                        string path = Run<string>(list.items[2]);
+                        string path = Run<string>(list.items[2]);                        
                         pc.Save(path);
                     }
                     break;
@@ -189,11 +189,14 @@ namespace CaveSpy
 
         private object Run_DrawElevationColor(LispRuntimeCommand cmd, LispList list)
         {
-            int c = 0;
-            CheckParameterCount(cmd, list, 3);
+            int c = 1;
+            CheckParameterCount(cmd, list, 4);
             Image img = Run<Image>(list.items[c++]);
             Map map = Run<Map>(list.items[c++]);
+            double spacing = Run<double>(list.items[c++]);
+            double opacity = Run<double>(list.items[c++]);
 
+            img.DrawElevationColor(img, map, spacing, opacity);
 
 
             return null;
@@ -202,14 +205,15 @@ namespace CaveSpy
         private object Run_DrawHillsideShade(LispRuntimeCommand cmd, LispList list)
         {
             int c = 1;
-            CheckParameterCount(cmd, list, 5);
+            CheckParameterCount(cmd, list, 6);
             Image img = Run<Image>(list.items[c++]);
             Map map = Run<Map>(list.items[c++]);
             double heading = Run<double>(list.items[c++]);
             double step = Run<double>(list.items[c++]);
             double intensity = Run<double>(list.items[c++]);
+            double opacity = Run<double>(list.items[c++]);
 
-            img.DrawHillshade(map, heading, step, intensity);
+            img.DrawHillshade(map, heading, step, intensity, opacity);
 
             return null;
         }
@@ -243,7 +247,7 @@ namespace CaveSpy
 
         private object Run_ReadFile(LispRuntimeCommand cmd, LispList list)
         {
-            CheckParameterCount(cmd, list, 1);
+            CheckParameterCount(cmd, list, 1,2);
             var path = Run<string>(list.items[1]);
 
             string ext = Path.GetExtension(path);
@@ -251,7 +255,9 @@ namespace CaveSpy
             {
                 case ".las":
                     {
+                        string defaultZone = Run<string>(list.items[2]);
                         var pointCloud = new PointCloud(base.Logger);
+                        pointCloud.DefaultZone = defaultZone;
                         pointCloud.LoadFromLas(path);
                         return pointCloud;
                     }

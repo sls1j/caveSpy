@@ -16,6 +16,7 @@
 	# set some variables
 	(Set includedValues "elevation color")
 	(Set includedClassifications "ground largeVegetation mediumVegetation smallVegetation buildings other")
+	(Set defaultZone "12T")
 
 	# make all the output file names
 	(Set cloudFile (ChangeExtension (Get lasFile) ".cloud"))
@@ -28,7 +29,7 @@
 		(Set map (ReadFile (Get mapFile)))
 		# else
 		(
-			(Set cloud (ReadFile (Get lasFile)))				
+			(Set cloud (ReadFile (Get lasFile) (Get defaultZone")))				
 			(Set map (MakeMap (Get cloud) (Get mapWidth) (Get includedValues) (Get includedClassifications)))
 			(SaveToFile (Get map) (Get mapFile))
 		)
@@ -42,26 +43,13 @@
 
 	# define the first layer
 	(Set image (MakeImage (Get map)))
-	#(DrawElevationColor (Get image) (Get map) 50d)	
-	(DrawHillsideShade (Get image) (Get map) 45d 5d 0.3d)
+	(DrawElevationColor (Get image) (Get map) 150d, 1.0d)	
+	(DrawHillsideShade (Get image) (Get map) 45d 5d 0.7d, 0.4d)
 	(DrawCaves (Get image) (Get caves))
-
-	# define the second layer
-	#(Set image2 (MakeImage (Get map)))
-	#(DrawSlopeColor (Get image2) (Get map))
-
-	# define the third layer
-	#(Set image3 (MakeImage (Get map)))
-	#(DrawDrainageIntensity (Get image3) (Get map))
-
-	# define the forth layer
-	#(Set image4 (MakeImage (Get map)))	
-	#(DawRealColor (Get image4) (Get map))
-	#(DrawHillsideShade (Get image) (Get map) 45d 34d 1.0d)
 
 	# save the first layer as an image
 	(SaveToFile (Get image) (Get imageFile))
 
 	# save all the layers in a Kml
-	#(SaveToFile (Get kmlFile) (Get image) (Get image2) (Get image3) (Get image4))		
+	#(SaveToFile (Get kmlFile) (Get image))
 )

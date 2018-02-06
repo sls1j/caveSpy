@@ -62,22 +62,21 @@ namespace CaveSpy
                 }
             }
         }
-
-
+        
         public string Zone
         {
             get
             {
                 if (_projection == null || _projection.Head == null)
                 {
-                    _logger.Log(Level.Warn, "Zone not found in the Projection data. Assuming UTM zone of 12T.  The kml will not likely be in the correct place!");
-                    return "12T";
+                    _logger.Log(Level.Warn, $"Zone not found in the Projection data. Assuming UTM zone of {DefaultZone}.  The kml will not likely be in the correct place!");
+                    return DefaultZone;
                 }
                 else
                 {
                     var zone = _projection.Head.properties.FirstOrDefault(p => p.Contains("zone"));
                     if (null == zone)
-                        return "12T";
+                        return DefaultZone;
                     else
                     {
                         int index = zone.IndexOf("zone ");
@@ -85,8 +84,11 @@ namespace CaveSpy
                         return zone;
                     }
                 }
+
             }
-        }     
+        }
+
+        public string DefaultZone { get; set; }
 
         public void Save(string filePath)
         {
