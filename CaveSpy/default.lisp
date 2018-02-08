@@ -1,6 +1,9 @@
 ﻿#  This is the default script for the CaveSpy
 #  It takes three arguments --input <lasFileName> and --image-size <image width in pixels> --output <output file> [--default-zone <UTM zone of las>]
-#
+#  --input   :the name of the file that will be loaded
+#  --image-size :width of the produced image size in pixels
+#  --output  :the name of the output file.  The extension determines the type of file to be produced.  .bmp and .kml are supported
+#  --default-zone  :Some of the .las files don't seem to include UTM zone information.  If not specify the correct zone with this parameter.  The default is value is 12T
 #
 
 (	
