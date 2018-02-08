@@ -62,6 +62,7 @@ namespace Bee.Eee.Utility.Logging
             }
 
             n[_enabledCategories.Length] = categoryId;
+            _enabledCategories = n;
         }
 
         public bool IsCategoryEnabled(int categoryId)

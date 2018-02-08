@@ -25,6 +25,11 @@ namespace CaveSpy
             height = m.height;
             this.image = new byte[width * height * 4];
             meta = new Dictionary<string, object>();
+            meta["zone"] = m.zone;
+            meta["physicalLeft"] = m.physicalLeft;
+            meta["physicalBottom"] = m.physicalBottom;
+            meta["physicalRight"] = m.physicalRight;
+            meta["physicalTop"] = m.physicalTop;
         }
 
         public void DrawHillshade(Map map, double heading, double step, double intensity, double opacity)

@@ -37,12 +37,12 @@ namespace CaveSpy
             Categories cat = new Categories();            
 
             ILogger logger = new ConsoleLogger("Main");
+            ScriptEngine se = new ScriptEngine(logger, cat);
             if (verbose)
-            {
+             {
                 logger.EnableCategory(cat.ScriptLogging);
             }
 
-            ScriptEngine se = new ScriptEngine(logger, cat);
             se.RunScript(scriptPath);
 
 

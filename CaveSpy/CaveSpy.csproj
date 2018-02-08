@@ -66,6 +66,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="complex-default.lisp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="default.lisp">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

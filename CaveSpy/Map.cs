@@ -94,7 +94,7 @@ namespace CaveSpy
             map.physicalLeft = header.MinX;
             map.physicalTop = header.MinY;
             map.physicalRight = header.MaxX;
-            map.physicalBottom = header.MaxX;
+            map.physicalBottom = header.MaxY;
             map.physicalWidth = header.MaxX - header.MinX;
             map.physicalHeight = header.MaxY - header.MinY;
             map.physicalHigh = cloud.Header.MaxZ;
