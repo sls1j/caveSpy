@@ -116,13 +116,11 @@ namespace CaveSpy
             map.colors = new Color[size];
             var contributers = new int[size];
 
-
-            for (int i = 0; i < cloud.Header.NumberOfPointRecords; i++)
+            cloud.HandlePoints((i, p) =>
             {
                 if (i % 1000000 == 0)
                     _logger.Log(Level.Debug, $"{i:0,000}/{header.NumberOfPointRecords:0,000} {(double)i / (double)header.NumberOfPointRecords * 100: 0.00}%");
 
-                var p = cloud.Points[i];
 
                 double x = p.X * header.XScaleFactor + header.XOffset;
                 double y = p.Y * header.YScaleFactor + header.YOffset;
@@ -130,7 +128,7 @@ namespace CaveSpy
 
                 // skip if not in area of interest
                 if (x < map.physicalLeft || x > map.physicalRight || y < map.physicalTop || y > map.physicalBottom)
-                    continue;
+                    return;
 
                 int xi = (int)((x - minX) * xScale);
                 int yi = map.height - (int)((y - minY) * yScale) - 1;
@@ -140,7 +138,7 @@ namespace CaveSpy
                 map.classifications[ii] = p.Classification;
                 if (header.PointDataFormat == 2 || header.PointDataFormat == 3)
                     map.colors[ii] = new Color(p.Red, p.Green, p.Blue);
-            }
+            });
 
             for (int i = 0; i < map.elevations.Length; i++)
             {
@@ -271,7 +269,7 @@ namespace CaveSpy
                                 continue;
 
                             cnt++;
-                            Z *= map.elevations[xx + yy * map.width]+1;
+                            Z *= map.elevations[xx + yy * map.width] + 1;
                         }
                     }
 
@@ -321,7 +319,7 @@ namespace CaveSpy
             {
                 // get 
                 int ii;
-                while (used.Contains(ii = (int)(r.NextDouble() * map.elevations.Length)));
+                while (used.Contains(ii = (int)(r.NextDouble() * map.elevations.Length))) ;
                 used.Add(ii);
                 map.elevations[ii] = 0;
                 map.classifications[ii] = 0;

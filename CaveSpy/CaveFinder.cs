@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Bee.Eee.Utility.Threading;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -7,10 +8,10 @@ using System.Threading.Tasks;
 
 namespace CaveSpy
 {
-    class CaveFinder
+    class CaveFinderAlgorithm
     {
 
-        public CaveFinder()
+        public CaveFinderAlgorithm()
         {
         }
 
@@ -58,7 +59,7 @@ namespace CaveSpy
 
 
                     int i = y * map.height;
-                    if ( y % 4 == 0 )
+                    if (y % 4 == 0)
                         Console.WriteLine($"Procssing {i:0,000}/{total:0,000} {(double)i / (double)total * 100:0.00}% points via flood: cnt {results.Count}");
                 }
 
@@ -83,7 +84,8 @@ namespace CaveSpy
             var stack = new Stack<Location>();
             stack.Push(new Location(xStart, yStart));
 
-            while( !edge && size < maxSize && stack.Count > 0 ){
+            while (!edge && size < maxSize && stack.Count > 0)
+            {
                 var loc = stack.Pop();
 
                 Extensions.NeighborhoodLoop(map.width, map.height, loc.x, loc.y,
@@ -120,6 +122,81 @@ namespace CaveSpy
                 this.x = x;
                 this.y = y;
             }
+        }
+
+        public int[] MapDrainage(Map map)
+        {
+            int[] result = new int[map.elevations.Length];
+            int threadCount = System.Environment.ProcessorCount * 2;
+            int maxIter = (int)(Math.Sqrt(map.height * map.height + map.width * map.width) * 2); // allow to wander from one corner to another
+            using (var s = new Semaphore(threadCount, threadCount))
+            {
+                int total = map.width * map.height;
+                for (int yLoop = 0; yLoop < map.height; yLoop++)
+                {
+                    if (yLoop % 25 == 0)
+                        Console.WriteLine($"Procssing {yLoop:0,000}/{map.height:0,000} {(double)yLoop / (double)map.height * 100:0.00}%");
+
+                    s.WaitOne();
+                    ThreadPool.QueueUserWorkItem(o =>
+                    {
+                        try
+                        {
+                            int y = (int)(o);
+                            int ii = y * map.width;
+
+                            List<Cave> newCaves = new List<Cave>();
+                            for (int x = 0; x < map.width; x++)
+                            {
+                                int xp = x;
+                                int yp = y;
+                                int xl, yl;
+                                int ip = x + y * map.width;
+                                int cnt = 0;
+                                do
+                                {
+                                    xl = xp;
+                                    yl = yp;
+                                    cnt++;
+
+                                    double min = map.elevations[xp + yp * map.width];
+                                    for (int yy = yl - 1, row = (yl - 1) * map.width; yy <= yl + 1; yy++, row += map.width)
+                                    {
+                                        for (int xx = xl - 1; xx <= xl + 1; xx++)
+                                        {
+                                            if (xx < 0 || xx >= map.width || yy < 0 || yy >= map.height)
+                                                continue;
+
+                                            double v = map.elevations[xx + row];
+                                            if (v < min)
+                                            {
+                                                min = v;
+                                                xp = xx;
+                                                yp = yy;
+                                                ip = xx + row;
+                                            }
+                                        }
+                                    }
+                                    lock (result)
+                                    {
+                                        result[ip]++;
+                                    }
+                                } while (cnt < maxIter && !(xp == xl && yp == yl)); // keep going until we've found the minimum drainage point
+                            }
+                        }
+                        finally
+                        {
+                            s.Release();
+                        }
+                    }, yLoop);
+                }
+
+                // resync all the threads
+                for (int j = 0; j < threadCount; j++)
+                    s.WaitOne();
+
+            }
+            return result;
         }
     }
 

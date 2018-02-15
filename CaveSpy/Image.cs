@@ -103,6 +103,23 @@ namespace CaveSpy
             }
         }
 
+        public void DrawArrayInt(Image img, int[] array, double spacing, double opacity)
+        {
+            if (img.width * img.height != array.Length)
+                throw new InvalidOperationException("Array must be the same dimension of the image!");            
+
+            for (int i = 0, ii=0; i < array.Length; i++, ii+=4)
+            {
+                int v = array[i];
+
+                byte r, g, b;
+                HueToRGB(v / spacing, 0.8, 0.8, out r, out g, out b);
+                image[ii] = Mix(image[ii], b, opacity);
+                image[ii + 1] = Mix(image[ii + 1], g, opacity);
+                image[ii + 2] = Mix(image[ii + 2], r, opacity);
+            }
+        }
+
         private static byte Mix(byte a, byte b, double opacity)
         {
             return ClipToByteColor(a * (1 - opacity) + b * (opacity));

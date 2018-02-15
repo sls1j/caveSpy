@@ -19,6 +19,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Logging", "Utility\Logging\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Scripting.Lisp", "Utility\Scripting.Lisp\Scripting.Lisp.csproj", "{73667948-656C-4623-9C56-11F80C71E152}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Threading", "Utility\Threading\Threading.csproj", "{9DA3B468-F562-4B5C-95FD-FA8DA7EA29C1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Code Analysis|Any CPU = Code Analysis|Any CPU
@@ -50,6 +52,12 @@ Global
 		{73667948-656C-4623-9C56-11F80C71E152}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{73667948-656C-4623-9C56-11F80C71E152}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{73667948-656C-4623-9C56-11F80C71E152}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9DA3B468-F562-4B5C-95FD-FA8DA7EA29C1}.Code Analysis|Any CPU.ActiveCfg = Release|Any CPU
+		{9DA3B468-F562-4B5C-95FD-FA8DA7EA29C1}.Code Analysis|Any CPU.Build.0 = Release|Any CPU
+		{9DA3B468-F562-4B5C-95FD-FA8DA7EA29C1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9DA3B468-F562-4B5C-95FD-FA8DA7EA29C1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9DA3B468-F562-4B5C-95FD-FA8DA7EA29C1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9DA3B468-F562-4B5C-95FD-FA8DA7EA29C1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -58,6 +66,7 @@ Global
 		{09FC6D20-E03F-426C-8922-10E91427BEEC} = {3383F2DE-5EE7-4183-A190-B0F2D7F3FAA5}
 		{52C36514-CD5D-4F68-88C5-8FE03C48CE06} = {3383F2DE-5EE7-4183-A190-B0F2D7F3FAA5}
 		{73667948-656C-4623-9C56-11F80C71E152} = {3383F2DE-5EE7-4183-A190-B0F2D7F3FAA5}
+		{9DA3B468-F562-4B5C-95FD-FA8DA7EA29C1} = {3383F2DE-5EE7-4183-A190-B0F2D7F3FAA5}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {28F26EBC-7246-4C5C-A05F-A271FDCE940A}

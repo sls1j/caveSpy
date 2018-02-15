@@ -31,10 +31,23 @@ namespace CaveSpy
             RegisterCommand("DrawHillsideShade", Run_DrawHillsideShade);
             RegisterCommand("DrawCaves", Run_DrawCaves);
             RegisterCommand("DrawSlopeColor", Run_DrawSlopeColor);
-            RegisterCommand("DrawDrainageIntensity", Run_DrawDrainageIntensity);
+            RegisterCommand("MapDrainage", Run_MapDrainage);
             RegisterCommand("DrawRealColor", Run_DrawRealColor);
             RegisterCommand("DrawClassification", Run_DrawClassification);
             RegisterCommand("GenerateMap", Run_GenerateMap);
+            RegisterCommand("DrawIntArray", Run_DrawIntArray);
+        }
+
+        private object Run_DrawIntArray(LispRuntimeCommand cmd, LispList list)
+        {
+            CheckParameterCount(cmd, list, 4);
+            int c = 1;
+            Image img = Run<Image>(list.items[c++]);
+            int[] arr = Run<int[]>(list.items[c++]);
+            double spacing = Run<double>(list.items[c++]);
+            double opacity = Run<double>(list.items[c++]);
+            img.DrawArrayInt(img, arr, spacing, opacity);
+            return null;
         }
 
         private object Run_GenerateMap(LispRuntimeCommand cmd, LispList list)
@@ -204,7 +217,7 @@ namespace CaveSpy
             CheckParameterCount(cmd, list, 2);
             Map map = Run<Map>(list.items[1]);
             double depth = Run<double>(list.items[2]);
-            CaveFinder finder = new CaveFinder();
+            CaveFinderAlgorithm finder = new CaveFinderAlgorithm();
             var caves = finder.FindCaves(map, depth);
             return caves;
         }
@@ -265,9 +278,14 @@ namespace CaveSpy
             return null;
         }
 
-        private object Run_DrawDrainageIntensity(LispRuntimeCommand cmd, LispList list)
+        private object Run_MapDrainage(LispRuntimeCommand cmd, LispList list)
         {
-            return null;
+            CheckParameterCount(cmd, list, 1);
+            int c = 1;
+            Map map = Run<Map>(list.items[c++]);
+            CaveFinderAlgorithm alg = new CaveFinderAlgorithm();
+            
+            return alg.MapDrainage(map);
         }
 
         private object Run_DrawRealColor(LispRuntimeCommand cmd, LispList list)

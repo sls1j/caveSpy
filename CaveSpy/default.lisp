@@ -16,15 +16,11 @@
 	# gets the width argument for the image
 	(Set mapWidth (GetArg "--image-size" 2000i))	
 
-	# set some variables
-	(Set includedValues "elevation color") # this doesn't do anything yet
-	(Set includedClassifications "ground largeVegetation mediumVegetation smallVegetation buildings other")	 # this doesn't do anything yet
-
 	# read the las file
 	(Set cloud (ReadFile (Get lasFile) (GetArg "--default-zone", "12T")))
 
 	# map the las file to a regtangular grid
-	(Set map (MakeMap (Get cloud) (Get mapWidth) (Get includedValues) (Get includedClassifications)))
+	(Set map (MakeMap (Get cloud) (Get mapWidth)))
 
 	# fix any holes in the map -- right now this isn't a good algorithm
 	(FillHoles (Get map))

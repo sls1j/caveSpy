@@ -12,9 +12,10 @@ namespace CaveSpy
     [Serializable]
     class PointCloud
     {
+        string _path;
+        Action<PointData, BinaryReader> _readFunc;
         PointCloudHeader _header;
-        ProjectionData _projection;
-        PointData[] _points;
+        ProjectionData _projection;        
         ILogger _logger;
 
         public PointCloud(ILogger logger)
@@ -25,10 +26,9 @@ namespace CaveSpy
         public PointCloudHeader Header { get { return _header; } }
         public ProjectionData Projection { get { return _projection; } }
 
-        public PointData[] Points { get { return _points; } }
-
         public void LoadFromLas(string path)
         {
+            _path = path;
             using (FileStream fileStream = new FileStream(path, FileMode.Open))
             using (var reader = new BinaryReader(fileStream))
             {
@@ -42,23 +42,32 @@ namespace CaveSpy
 
                 // reset the file position
                 fileStream.Seek(_header.OffsetToPointData, SeekOrigin.Begin);
-
-                Action<PointData, BinaryReader> readFunc;
+                
                 switch (_header.PointDataFormat)
                 {
-                    case 1: readFunc = PointData.ReadFormat1; break;
-                    case 2: readFunc = PointData.ReadFormat2; break;
-                    case 3: readFunc = PointData.ReadFormat3; break;
+                    case 1: _readFunc = PointData.ReadFormat1; break;
+                    case 2: _readFunc = PointData.ReadFormat2; break;
+                    case 3: _readFunc = PointData.ReadFormat3; break;
                     default:
                         throw new NotImplementedException($"Format {_header.PointDataFormat} not supported.");
                 }
+            }
+        }
 
-                _points = new PointData[_header.NumberOfPointRecords];
+        public void HandlePoints(Action<int, PointData> handler)
+        {
+            using (FileStream fileStream = new FileStream(_path, FileMode.Open))
+            using (var reader = new BinaryReader(fileStream))
+            {
+                // move to the point data
+                fileStream.Seek(_header.OffsetToPointData, SeekOrigin.Begin);
+
+                // start reading
                 for (var i = 0; i < _header.NumberOfPointRecords; i++)
                 {
                     var pd = new PointData();
-                    readFunc(pd, reader);
-                    _points[i] = pd;
+                    _readFunc(pd, reader);
+                    handler(i, pd);
                 }
             }
         }
