@@ -5,6 +5,7 @@ Reads a .LAS file, and can do some analysis on the data to help locate caves.  T
 
 ## Release [1.1.0.1](http://sls1j.ddns.net/bin/CaveSpy-1.1.0.1.zip)
 Fixed bugs in the hole filling algorithm, the elevation coloring, and added a geometric filter command to the scripting language.
+Added the beginning of the reference guide to the scripting language.  See Commands.md
 
 ## Release [1.1.0.0](http://sls1j.ddns.net/bin/CaveSpy-1.1.0.0.zip)
 Reworks much of the code to add a lisp based scripting engine.  This is because the commandline options were getting overwhelming.  The scripting is
