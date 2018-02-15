@@ -3,7 +3,7 @@ Cave Spy
 
 Reads a .LAS file, and can do some analysis on the data to help locate caves.  Then it outputs either and image or a kml overlay for Google Earth
 
-## Release [1.1.0.1](http://sls1j.ddns.net/bin/CaveSpy-1.1.0.2.zip)
+## Release [1.1.0.2](http://sls1j.ddns.net/bin/CaveSpy-1.1.0.2.zip)
 Added scripting command MapDrainage for mapping the drainage of a given las file.
 Added scripting command DrawIntArray to draw the logrithmic results of the drainage map
 Updated the Command.md 
