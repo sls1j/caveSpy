@@ -40,13 +40,12 @@ namespace CaveSpy
 
         private object Run_DrawIntArray(LispRuntimeCommand cmd, LispList list)
         {
-            CheckParameterCount(cmd, list, 4);
+            CheckParameterCount(cmd, list, 3);
             int c = 1;
             Image img = Run<Image>(list.items[c++]);
             int[] arr = Run<int[]>(list.items[c++]);
-            double spacing = Run<double>(list.items[c++]);
             double opacity = Run<double>(list.items[c++]);
-            img.DrawArrayInt(img, arr, spacing, opacity);
+            img.DrawArrayInt(img, arr, opacity);
             return null;
         }
 
@@ -217,7 +216,7 @@ namespace CaveSpy
             CheckParameterCount(cmd, list, 2);
             Map map = Run<Map>(list.items[1]);
             double depth = Run<double>(list.items[2]);
-            CaveFinderAlgorithm finder = new CaveFinderAlgorithm();
+            CaveFinderAlgorithm finder = new CaveFinderAlgorithm(Logger);
             var caves = finder.FindCaves(map, depth);
             return caves;
         }
@@ -280,12 +279,13 @@ namespace CaveSpy
 
         private object Run_MapDrainage(LispRuntimeCommand cmd, LispList list)
         {
-            CheckParameterCount(cmd, list, 1);
+            CheckParameterCount(cmd, list, 2);
             int c = 1;
             Map map = Run<Map>(list.items[c++]);
-            CaveFinderAlgorithm alg = new CaveFinderAlgorithm();
+            int lookDistance = Run<int>(list.items[c++]);
+            CaveFinderAlgorithm alg = new CaveFinderAlgorithm(Logger);
             
-            return alg.MapDrainage(map);
+            return alg.MapDrainage(map, lookDistance);
         }
 
         private object Run_DrawRealColor(LispRuntimeCommand cmd, LispList list)

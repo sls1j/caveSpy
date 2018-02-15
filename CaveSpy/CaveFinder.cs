@@ -1,4 +1,5 @@
-﻿using Bee.Eee.Utility.Threading;
+﻿using Bee.Eee.Utility.Logging;
+using Bee.Eee.Utility.Threading;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,9 +11,11 @@ namespace CaveSpy
 {
     class CaveFinderAlgorithm
     {
+        private ILogger _logger;
 
-        public CaveFinderAlgorithm()
+        public CaveFinderAlgorithm(ILogger logger)
         {
+            _logger = logger.CreateSub("CaveFingerAlg");
         }
 
         public List<Cave> FindCaves(Map map, double floodDepth)
@@ -60,7 +63,7 @@ namespace CaveSpy
 
                     int i = y * map.height;
                     if (y % 4 == 0)
-                        Console.WriteLine($"Procssing {i:0,000}/{total:0,000} {(double)i / (double)total * 100:0.00}% points via flood: cnt {results.Count}");
+                        _logger.Log(Level.Info, $"Flood Procssing {i:0,000}/{total:0,000} {(double)i / (double)total * 100:0.00}% points via flood: cnt {results.Count}");
                 }
 
                 // resync all the threads
@@ -124,7 +127,7 @@ namespace CaveSpy
             }
         }
 
-        public int[] MapDrainage(Map map)
+        public int[] MapDrainage(Map map, int lookDistance)
         {
             int[] result = new int[map.elevations.Length];
             int threadCount = System.Environment.ProcessorCount * 2;
@@ -135,7 +138,7 @@ namespace CaveSpy
                 for (int yLoop = 0; yLoop < map.height; yLoop++)
                 {
                     if (yLoop % 25 == 0)
-                        Console.WriteLine($"Procssing {yLoop:0,000}/{map.height:0,000} {(double)yLoop / (double)map.height * 100:0.00}%");
+                        _logger.Log(Level.Info, $"Drainage Procssing {yLoop:0,000}/{map.height:0,000} {(double)yLoop / (double)map.height * 100:0.00}%");
 
                     s.WaitOne();
                     ThreadPool.QueueUserWorkItem(o =>
@@ -158,11 +161,11 @@ namespace CaveSpy
                                     xl = xp;
                                     yl = yp;
                                     cnt++;
-
+                                    
                                     double min = map.elevations[xp + yp * map.width];
-                                    for (int yy = yl - 1, row = (yl - 1) * map.width; yy <= yl + 1; yy++, row += map.width)
+                                    for (int yy = yl - lookDistance, row = (yl - lookDistance) * map.width; yy <= yl + lookDistance; yy++, row += map.width)
                                     {
-                                        for (int xx = xl - 1; xx <= xl + 1; xx++)
+                                        for (int xx = xl - lookDistance; xx <= xl + lookDistance; xx++)
                                         {
                                             if (xx < 0 || xx >= map.width || yy < 0 || yy >= map.height)
                                                 continue;
@@ -179,7 +182,19 @@ namespace CaveSpy
                                     }
                                     lock (result)
                                     {
-                                        result[ip]++;
+                                        // need to draw a line from last point to this
+                                        if (lookDistance > 1)
+                                        {
+                                            int dist = (int)(Math.Sqrt((xl - xp) * (xl - xp) + (yl - yp) * (yl - yp)) + 1);
+                                            for (int t = 0; t < dist; t++)
+                                            {
+                                                int xd = (xp - xl) * t / dist + xl;
+                                                int yd = (yp - yl) * t / dist + yl;
+                                                result[xd + yd * map.width]++;
+                                            }
+                                        }
+                                        else
+                                            result[ip]++;                                        
                                     }
                                 } while (cnt < maxIter && !(xp == xl && yp == yl)); // keep going until we've found the minimum drainage point
                             }
