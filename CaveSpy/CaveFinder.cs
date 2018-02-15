@@ -58,7 +58,8 @@ namespace CaveSpy
 
 
                     int i = y * map.height;
-                    Console.WriteLine($"Procssing {i:0,000}/{total:0,000} {(double)i / (double)total * 100:0.00}% points via flood: cnt {results.Count}");
+                    if ( y % 4 == 0 )
+                        Console.WriteLine($"Procssing {i:0,000}/{total:0,000} {(double)i / (double)total * 100:0.00}% points via flood: cnt {results.Count}");
                 }
 
                 // resync all the threads

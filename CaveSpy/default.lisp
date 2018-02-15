@@ -14,7 +14,7 @@
 	(Assert (Equals (GetExtension (Get lasFile)) ".las"))
 
 	# gets the width argument for the image
-	(Set mapWidth (GetArg "--image-size" 3000i))	
+	(Set mapWidth (GetArg "--image-size" 2000i))	
 
 	# set some variables
 	(Set includedValues "elevation color") # this doesn't do anything yet
@@ -28,15 +28,17 @@
 
 	# fix any holes in the map -- right now this isn't a good algorithm
 	(FillHoles (Get map))
+	(MapGeometricMeanFilter (Get map) 5i)
 
 	# run the algorithm to find caves -- this also isn't very good especially in terrain with lots of trees
-	(Set caves (FindCavesByFlood (Get map) 1.0d)) # parameters <map> <minimum depth of the hole in meters>
+	#(Set caves (FindCavesByFlood (Get map) 2.0d)) # parameters <map> <minimum depth of the hole in meters>
 
 	# draw an image based on the map and cave analysis
 	(Set image (MakeImage (Get map)))
 	(DrawElevationColor (Get image) (Get map) 450d, 1.0d)	# parmaters <image> <map> <meter per color cycle> <opacity>
 	(DrawHillsideShade (Get image) (Get map) 45d 5d 0.7d, 0.5d) #parameters <image> <map> <angle of hillshade> <distance from point of interest> <intensity of shading> <opacity>
-	(DrawCaves (Get image) (Get caves))
+	#(DrawCaves (Get image) (Get caves))
+	#(DrawClassification (Get image) (Get map) 13i)
 
 	# save the image as defined by the output tag
 	(SaveToFile (Get image) (GetArg "--output", "default.bmp"))

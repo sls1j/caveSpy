@@ -62,7 +62,20 @@ namespace CaveSpy
             }
         }
 
-       
+        internal void DrawClassification(Map map, int classification)
+        {
+            for (int i = 0, ii = 0; i < map.elevations.Length; i++, ii += 4)
+            {
+                var v = map.classifications[i];
+
+                if (v == classification)
+                {
+                    image[ii] = 0;
+                    image[ii + 1] = 0;
+                    image[ii + 2] = 0;
+                }
+            }
+        }
 
         public void DrawCaves(List<Cave> caves, double opacity)
         {
@@ -83,7 +96,7 @@ namespace CaveSpy
                 double v = map.elevations[i];
 
                 byte r, g, b;
-                HueToRGB(v / 40.0, 0.8, 0.8, out r, out g, out b);
+                HueToRGB(v / spacing, 0.8, 0.8, out r, out g, out b);
                 image[ii] = Mix(image[ii], b, opacity);
                 image[ii + 1] = Mix(image[ii+1], g, opacity);
                 image[ii + 2] = Mix(image[ii+2], r, opacity);

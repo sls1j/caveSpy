@@ -47,8 +47,8 @@ namespace CaveSpy
 
 
             Console.WriteLine($"Processing time: {DateTime.UtcNow - startTime}");
-            if (Debugger.IsAttached)
-                Console.ReadKey();
+            //if (Debugger.IsAttached)
+            //    Console.ReadKey();
         }
 
         private static void PrintError(string errorMessage)

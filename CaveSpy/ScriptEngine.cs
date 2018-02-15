@@ -25,15 +25,55 @@ namespace CaveSpy
             RegisterCommand("MakeMap", Run_MakeMap);
             RegisterCommand("FillHoles", Run_FillHoles);
             RegisterCommand("FindCavesByFlood", Run_FindCavesByFlood);
+            RegisterCommand("MapGeometricMeanFilter", MapGeometricMeanFilter);
             RegisterCommand("MakeImage", Run_MakeImage);
             RegisterCommand("DrawElevationColor", Run_DrawElevationColor);
             RegisterCommand("DrawHillsideShade", Run_DrawHillsideShade);
             RegisterCommand("DrawCaves", Run_DrawCaves);
             RegisterCommand("DrawSlopeColor", Run_DrawSlopeColor);
             RegisterCommand("DrawDrainageIntensity", Run_DrawDrainageIntensity);
-            RegisterCommand("DrawReadColor", Run_DrawRealColor);
+            RegisterCommand("DrawRealColor", Run_DrawRealColor);
+            RegisterCommand("DrawClassification", Run_DrawClassification);
+            RegisterCommand("GenerateMap", Run_GenerateMap);
+        }
 
-        }       
+        private object Run_GenerateMap(LispRuntimeCommand cmd, LispList list)
+        {
+            MapAlgorithms alg = new MapAlgorithms(Logger);
+            int c = 1;
+            string type = Run<string>(list.items[c++]);
+            int width = Run<int>(list.items[c++]);
+            int height = Run<int>(list.items[c++]);
+            var map = alg.GenerateMap(type, width, height);
+
+            return map;
+        }
+
+        private object MapGeometricMeanFilter(LispRuntimeCommand cmd, LispList list)
+        {
+            CheckParameterCount(cmd, list, 2);
+            int c = 1;
+            var map = Run<Map>(list.items[c++]);
+            var N = Run<int>(list.items[c++]);
+            if (N % 2 != 1)
+                throw new ArgumentOutOfRangeException("N must be odd for GeometricMeanFilter");
+
+            var alg = new MapAlgorithms(Logger);
+            alg.GeometricMeanFilter(map, N);
+
+            return null;
+        }
+
+        private object Run_DrawClassification(LispRuntimeCommand cmd, LispList list)
+        {
+            CheckParameterCount(cmd, list, 3);
+            int c = 1;
+            var image = Run<Image>(list.items[c++]);
+            var map = Run<Map>(list.items[c++]);
+            var classification = Run<int>(list.items[c++]);
+            image.DrawClassification(map, classification);
+            return null;
+        }
 
         public void RunScript(string path)
         {
@@ -117,14 +157,7 @@ namespace CaveSpy
         {
             object objectToSave = Run<object>(list.items[1]);
             switch (objectToSave)
-            {
-                case PointCloud pc:
-                    {
-                        CheckParameterCount(cmd, list, 2);
-                        string path = Run<string>(list.items[2]);                        
-                        pc.Save(path);
-                    }
-                    break;
+            {               
                 case Map m:
                     {
                         CheckParameterCount(cmd, list, 2);
@@ -146,11 +179,9 @@ namespace CaveSpy
 
         private object Run_MakeMap(LispRuntimeCommand cmd, LispList list)
         {
-            CheckParameterCount(cmd, list, 4);
+            CheckParameterCount(cmd, list, 2);
             PointCloud pc = Run<PointCloud>(list.items[1]);
             int mapWidth = Run<int>(list.items[2]);
-            string includedValues = Run<string>(list.items[3]);
-            string includedClassifications = Run<string>(list.items[4]);
 
             var map = new Map();
             MapAlgorithms alg = new MapAlgorithms(base.Logger);
@@ -163,7 +194,8 @@ namespace CaveSpy
             CheckParameterCount(cmd, list, 1);
             Map map = Run<Map>(list.items[1]);
             MapAlgorithms alg = new MapAlgorithms(base.Logger);
-            alg.LinearFillMap(map);
+            //alg.LinearFillMap(map);
+            alg.EdgeFillMapAlgorithm(map);
             return null;
         }
 
