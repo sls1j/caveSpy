@@ -3,22 +3,22 @@ Cave Spy Scriping Command Reference
 
 A command reference for the scripting language
 
-#`(Add <n1 : number> <n2 : number>)`
+#### `(Add <n1 : number> <n2 : number>)`
 
 returns n1 + n2
 
 
-#`(And <condition 1 : boolean> <condition 2 : boolean>)`
+#### `(And <condition 1 : boolean> <condition 2 : boolean>)`
 
 returns true if condition 1 and 2 are both true
 
 
-#`(Assert <condition : boolean>)`
+#### `(Assert <condition : boolean>)`
 
 throws an exception if the condition is false
 
 
-#`(ChangeExtension <fileName : string> <extension : string>)`
+#### `(ChangeExtension <fileName : string> <extension : string>)`
 
 changes the extension of the file name passed into to the one that is specified
 Example
@@ -28,17 +28,17 @@ Example
 ```
 
 
-#`(DrawCaves <image> <caves>)`
+#### `(DrawCaves <image> <caves>)`
 
 draws the found caves into the given image.
 
 
-#`(DrawClassification <image : Image> <map : Map> <classification: int>)`
+#### `(DrawClassification <image : Image> <map : Map> <classification: int>)`
 
 Colors all of the matching classification items to black
 
 
-#`(MapDrainage <map : Map> <look distance: int>)`
+#### `(MapDrainage <map : Map> <look distance: int>)`
 
 Maps the drainage into an int array
 
@@ -53,99 +53,99 @@ number the slower the computations.
 ```
 
 
-#`(DrawElevationColor <image : Image> <map : Map> <opacity: double>)`
+#### `(DrawElevationColor <image : Image> <map : Map> <opacity: double>)`
 
 Draws the colored elevation.  A full color cycle is determined by the "meters per cycle" parameter.
 
 
-#`(DrawHillsideShade <image : Image> <map : Map> <heading : double> <step: double> <intensity: double> <opacity : double>)`
+#### `(DrawHillsideShade <image : Image> <map : Map> <heading : double> <step: double> <intensity: double> <opacity : double>)`
 
 
-#`(DrawIntArray <image: Image> <array : array of int> <opacity : double>)`
+#### `(DrawIntArray <image: Image> <array : array of int> <opacity : double>)`
 
 
-#`(DrawRealColor <image : Image> <map : Map> <opacity: double>)`
-
--- not implemented --
-
-
-#`(DrawSlopeColor <image : Image> <map: Map> <opacity: double>)`
+#### `(DrawRealColor <image : Image> <map : Map> <opacity: double>)`
 
 -- not implemented --
 
 
-#`(Equals <a : any> <b: any>)`
+#### `(DrawSlopeColor <image : Image> <map: Map> <opacity: double>)`
+
+-- not implemented --
 
 
-#`(FileExists <file name>)`
+#### `(Equals <a : any> <b: any>)`
 
 
-#`(FillHoles <map : Map>)`
+#### `(FileExists <file name>)`
 
 
-#`(FindCavesByFlood <map : Map> <depth : double>)`
+#### `(FillHoles <map : Map>)`
 
 
-#`(Get <variable name : string>)`
+#### `(FindCavesByFlood <map : Map> <depth : double>)`
 
 
-#`(GetArg <agument name : string> <default value : any>)`
+#### `(Get <variable name : string>)`
 
 
-#`(GetEnvironment <variable name>)`
+#### `(GetArg <agument name : string> <default value : any>)`
 
 
-#`(GetExtension <file name>)`
+#### `(GetEnvironment <variable name>)`
 
 
-#`(GreaterThan <n1 : number> <n2 : number>)`
+#### `(GetExtension <file name>)`
 
 
-#`(GreaterThanEqual <n1: number> <n2: number>)`
+#### `(GreaterThan <n1 : number> <n2 : number>)`
 
 
-#`(If <condition> <True Clause> <False Clause>)`
+#### `(GreaterThanEqual <n1: number> <n2: number>)`
 
 
-#`(LessThan <n1 : number> <n2: number>)`
+#### `(If <condition> <True Clause> <False Clause>)`
 
 
-#`(LessThanEqual <n1 : number> <n2: number>)`
+#### `(LessThan <n1 : number> <n2: number>)`
 
 
-#`(Loop <n: int> <item to execute: any> [<item to execute: any>...])`
+####  `(LessThanEqual <n1 : number> <n2: number>)`
 
 
-#`(MakeImage <map: Map>)`
+#### `(Loop <n: int> <item to execute: any> [<item to execute: any>...])`
 
 
-#`(MakeMap <cloud: Cloud> <width: int>)`
+#### `(MakeImage <map: Map>)`
 
 
-#`(MapGeometricMeanFilter <map: Map> <N: int>)`
+#### `(MakeMap <cloud: Cloud> <width: int>)`
 
 
-#`(Not <condition: boolean>)`
+#### `(MapGeometricMeanFilter <map: Map> <N: int>)`
 
 
-#`(NotEquals <item1: any> <item2: any>)`
+#### `(Not <condition: boolean>)`
 
 
-#`(Or <condition 1: boolean> <condition 2: boolean>)`
+#### `(NotEquals <item1: any> <item2: any>)`
 
 
-#`(ReadFile <file name>)`
+#### `(Or <condition 1: boolean> <condition 2: boolean>)`
 
 
-#`(SaveToFile <object: image or map>)`
+#### `(ReadFile <file name>)`
 
 
-#`(Set <variable name: string> <value: any>)`
+#### `(SaveToFile <object: image or map>)`
 
 
-#`(Sub <n1 : number> <n2: number>)`
+#### `(Set <variable name: string> <value: any>)`
 
 
-#`(While <condition> [<item to execute>...])`
+#### `(Sub <n1 : number> <n2: number>)`
+
+
+#### `(While <condition> [<item to execute>...])`
 
 
