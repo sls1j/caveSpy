@@ -451,7 +451,7 @@ Example
 	# draw an image based on the map and cave analysis
 	(Set image (MakeImage (Get map)))
 	(DrawElevationColor (Get image) (Get map) 100d, 1.0d)	# parmaters <image> <map> <meter per color cycle> <opacity>
-	(DrawIntArray (Get image) (MapDrainage (Get map) 20i) 100.0d 1.0d)
+	(DrawIntArray (Get image) (MapDrainage (Get map) 20i) 1.0d)
 	(DrawHillsideShade (Get image) (Get map) 45d 5d 0.7d, 0.3d) #parameters <image> <map> <angle of hillshade> <distance from point of interest> <intensity of shading> <opacity>
 	#(DrawCaves (Get image) (Get caves))
 	#(DrawClassification (Get image) (Get map) 13i)
