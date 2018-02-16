@@ -287,7 +287,7 @@ Example:
 ---
 
 
-### `(MakeMap <cloud: Cloud> <width: int>)`
+### `(MakeMap <cloud: Cloud> <width: int> [<included classifications>])`
 
 Creates a map object from a .las file.  
 
@@ -295,11 +295,31 @@ Creates a map object from a .las file.
 |-------------|:------:|-------------|
 |cloud|Cloud|The cloud object read in via the Read File command|
 |width|int|The width in pixels of the map.  The height will be calculated in proportion to the physical width as defined in the .las file header.|
+|included classifications|int|Zero or more int fields that include the classifications to include.  If no classifications are specified then all points are included.|
 |return|Map|The map object to be returned|
+
+Classifications
+
+|Classification Value (bits 0:4)|Meaning|
+|--------------------|:------|
+|0|Created, never classified|
+|1|Unclassified|
+|2|Ground|
+|3|Low Vegetation|
+|4|Medium Vegetation|
+|5|High Vegetation |
+|6|Building|
+|7|Low Point (noise)|
+|8 |Model Key-point (mass point)|
+|9 |Water|
+|10 |Reserved for ASPRS Definition |
+|11| Reserved for ASPRS Definition |
+|12|Overlap Point|
+|13-31|Reserved for ASPRS Definition |
 
 Example:
 ```
-	(Set map (ReadFile( "file.las" )) 2000i)
+	(Set map (MakeMap( (Get cloud) 2000i 1i 2i)) # include unclassified and ground
 ```
 
 ---

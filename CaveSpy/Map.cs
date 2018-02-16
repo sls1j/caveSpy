@@ -88,7 +88,7 @@ namespace CaveSpy
         {
             _logger = (logger != null) ? logger.CreateSub("MapAlgorithms") : throw new ArgumentNullException("logger");
         }
-        public void ReadCloudIntoMap(Map map, int mapWidth, PointCloud cloud)
+        public void ReadCloudIntoMap(Map map, int mapWidth, PointCloud cloud, HashSet<int> includedClassifications)
         {
             var header = cloud.Header;
 
@@ -115,12 +115,19 @@ namespace CaveSpy
             map.classifications = new byte[size];
             map.colors = new Color[size];
             var contributers = new int[size];
+            bool filterByClass = includedClassifications.Count > 0;
+            HashSet<int> classifications = new HashSet<int>();
 
             cloud.HandlePoints((i, p) =>
             {
                 if (i % 1000000 == 0)
                     _logger.Log(Level.Debug, $"{i:0,000}/{header.NumberOfPointRecords:0,000} {(double)i / (double)header.NumberOfPointRecords * 100: 0.00}%");
 
+                var c = p.Classification & 0xF;
+                if ( filterByClass && !includedClassifications.Contains(c))
+                    return;
+
+                classifications.Add(p.Classification & 0x0F);
 
                 double x = p.X * header.XScaleFactor + header.XOffset;
                 double y = p.Y * header.YScaleFactor + header.YOffset;
@@ -128,7 +135,9 @@ namespace CaveSpy
 
                 // skip if not in area of interest
                 if (x < map.physicalLeft || x > map.physicalRight || y < map.physicalTop || y > map.physicalBottom)
-                    return;
+                    return;                
+
+
 
                 int xi = (int)((x - minX) * xScale);
                 int yi = map.height - (int)((y - minY) * yScale) - 1;
@@ -146,24 +155,25 @@ namespace CaveSpy
                 if (c > 1)
                     map.elevations[i] /= contributers[i];
             }
+
+            _logger.Log( $"Classifications present: { string.Join(",", classifications.ToArray())}");
+
         }
 
-        public void LinearFillMap(Map map)
+        public void Trim(Map map, HashSet<int> includedClassifications)
         {
-            int i = 0;
-            double lastValue = 0;
-            for (int y = 0; y < map.height; y++)
+            var c = map.classifications;
+            for (int i = 0; i < c.Length; i++)
             {
-                for (int x = 0; x < map.width; x++, i++)
+                if (!includedClassifications.Contains((int)c[i] & 0x0F))
                 {
-                    double v = map.elevations[i];
-                    if (v == 0)
-                        map.elevations[i] = lastValue;
-                    else
-                        lastValue = v;
+                    c[i] = 0;
+                    map.elevations[i] = 0;
+                    map.colors = null;
                 }
             }
         }
+       
 
         public void EdgeFillMapAlgorithm(Map map)
         {

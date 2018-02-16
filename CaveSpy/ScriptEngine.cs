@@ -191,13 +191,21 @@ namespace CaveSpy
 
         private object Run_MakeMap(LispRuntimeCommand cmd, LispList list)
         {
-            CheckParameterCount(cmd, list, 2);
+            if (list.items.Count < 3)
+                throw new LispParseException("'{0}' command must have at least 2 parameters. Line: {2}:{3}",
+                        cmd.CommandName, list.line, list.position);            
+
             PointCloud pc = Run<PointCloud>(list.items[1]);
             int mapWidth = Run<int>(list.items[2]);
 
             var map = new Map();
+
+            HashSet<int> includedClassifications = new HashSet<int>();
+            for (int i = 3; i < list.items.Count; i++)
+                includedClassifications.Add(Run<int>(list.items[i]));
+
             MapAlgorithms alg = new MapAlgorithms(base.Logger);
-            alg.ReadCloudIntoMap(map, mapWidth, pc);
+            alg.ReadCloudIntoMap(map, mapWidth, pc, includedClassifications);
             return map;
         }
 

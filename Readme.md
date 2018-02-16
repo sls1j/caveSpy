@@ -3,6 +3,13 @@ Cave Spy
 
 Reads a .LAS file, and can do some analysis on the data to help locate caves.  Then it outputs either and image or a kml overlay for Google Earth
 
+## Release [1.1.0.3](http://sls1j.ddns.net/bin/CaveSpy-1.1.0.3.zip)
+
+* Added parameters to MakeMap to specify which classifications will be imported into the
+map.
+* Add support for LAS Point data format 0
+
+
 ## Release [1.1.0.2](http://sls1j.ddns.net/bin/CaveSpy-1.1.0.2.zip)
 Added scripting command MapDrainage for mapping the drainage of a given las file.
 Added scripting command DrawIntArray to draw the logrithmic results of the drainage map
@@ -52,10 +59,13 @@ CaveSpy.exe [--script <script path>] [--verbose] [ script arguments ]");
 ## Roadmap
 * Add false coloring for slope angle
 * Add the ability to use the colors supplied from LIDAR in LAS point format 2 and 3
-* Add an option exclude classified types such as vegetation
-* Add algorithm to calculate drainage area of given spots.
-* Add full depression shading instead of just dot.
+* Add interactive command that allows entering commands manually on the line
+* Add color parameters to DrawCave, DrawClassification, and DrawIntArray
+* Add parameters to DrawElevationColor for grayscale, color, and rainbow
+* Improve reading GeoSpacial data from the headers
 * Add a GUI to make it easier to use.
+* Implemented 2018-02-16 ~~Add an option exclude classified types such as vegetation~~
+* Implemented 2018-02-14 ~~Add algorithm to calculate drainage area of given spots.~~
 * Implemented 2018-02-07 ~~Add a scripting language to make it easier to configure~~
 * Implemented 2018-02-07 ~~Add directionality and intensity to the hillshading~~
 * Implemented 2018-02-01 ~~Add false color for elevation~~
