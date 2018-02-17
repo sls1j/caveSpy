@@ -6,14 +6,11 @@ using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
 
 namespace CaveSpy
-{
-    [Serializable]
+{   
     class Map
     {
-        private Dictionary<string, object> _properties;
         public Map()
         {
-            _properties = new Dictionary<string, object>();
         }
 
         public double[] elevations;
@@ -29,35 +26,50 @@ namespace CaveSpy
         public double physicalWidth;
         public double physicalHeight;
         public double physicalHigh;
-        public double physicalLow;
-
-        public void SetProperty<T>(string name, T value)
-        {
-            _properties[name] = (object)value;
-        }
-
-        public T GetProperty<T>(string name)
-        {
-            object value;
-            value = _properties[name];
-            return (T)value;
-        }
+        public double physicalLow;       
 
         public void Save(string filePath)
         {
             using (var stream = new FileStream(filePath, FileMode.Create))
+            using (var writer = new BinaryWriter(stream))
             {
-                var writer = new BinaryFormatter();
-                writer.Serialize(stream, this);
+                writer.Write(width);
+                writer.Write(height);
+                writer.WriteArray(elevations);
+                writer.WriteArray(classifications);
+                writer.WriteArray(colors);
+                writer.Write(zone);
+                writer.Write(physicalLeft);
+                writer.Write(physicalRight);
+                writer.Write(physicalTop);
+                writer.Write(physicalBottom);
+                writer.Write(physicalHeight);
+                writer.Write(physicalWidth);
+                writer.Write(physicalHigh);
+                writer.Write(physicalLow);
             }
         }
 
         public static Map Load(string filePath, ILogger logger)
         {
             using (var stream = new FileStream(filePath, FileMode.Open))
+            using (var reader = new BinaryReader(stream))
             {
-                var reader = new BinaryFormatter();
-                var map = (Map)reader.Deserialize(stream);
+                Map map = new Map();
+                map.width = reader.ReadInt32();
+                map.height = reader.ReadInt32();
+                map.elevations = reader.ReadDoubleArray();
+                map.classifications = reader.ReadByteArray();
+                map.colors = reader.ReadColorArray();
+                map.zone = reader.ReadString();
+                map.physicalLeft = reader.ReadDouble();
+                map.physicalRight = reader.ReadDouble();
+                map.physicalTop = reader.ReadDouble();
+                map.physicalBottom = reader.ReadDouble();
+                map.physicalHeight = reader.ReadDouble();
+                map.physicalWidth = reader.ReadDouble();
+                map.physicalHigh = reader.ReadDouble();
+                map.physicalLow = reader.ReadDouble();
                 return map;
             }
         }
@@ -65,12 +77,16 @@ namespace CaveSpy
 
     }
 
-    [Serializable]
-    class Color
+    public class Color
     {
         public ushort red;
         public ushort green;
         public ushort blue;
+
+        public Color()
+        {
+
+        }
 
         public Color(ushort red, ushort green, ushort blue)
         {
@@ -78,6 +94,8 @@ namespace CaveSpy
             this.green = green;
             this.blue = blue;
         }
+        
+        public static readonly Color Empty = new Color(0, 0, 0);
     }
 
     class MapAlgorithms
@@ -124,7 +142,7 @@ namespace CaveSpy
                     _logger.Log(Level.Debug, $"{i:0,000}/{header.NumberOfPointRecords:0,000} {(double)i / (double)header.NumberOfPointRecords * 100: 0.00}%");
 
                 var c = p.Classification & 0xF;
-                if ( filterByClass && !includedClassifications.Contains(c))
+                if (filterByClass && !includedClassifications.Contains(c))
                     return;
 
                 classifications.Add(p.Classification & 0x0F);
@@ -135,7 +153,7 @@ namespace CaveSpy
 
                 // skip if not in area of interest
                 if (x < map.physicalLeft || x > map.physicalRight || y < map.physicalTop || y > map.physicalBottom)
-                    return;                
+                    return;
 
 
 
@@ -156,7 +174,7 @@ namespace CaveSpy
                     map.elevations[i] /= contributers[i];
             }
 
-            _logger.Log( $"Classifications present: { string.Join(",", classifications.ToArray())}");
+            _logger.Log($"Classifications present: { string.Join(",", classifications.ToArray())}");
 
         }
 
@@ -173,7 +191,7 @@ namespace CaveSpy
                 }
             }
         }
-       
+
 
         public void EdgeFillMapAlgorithm(Map map)
         {
@@ -288,6 +306,41 @@ namespace CaveSpy
             }
 
             map.elevations = newElevations;
+        }
+
+        public int[] CalculateSlopeAngle(Map map)
+        {
+            int[] angles = new int[map.height * map.width];
+            for (int y = 0, i = 0; y < map.height; y++)
+            {
+                for (int x = 0; x < map.width; x++, i++)
+                {
+                    double avgDiffX = 0;
+                    double avgDiffY = 0;
+                    int avgCnt = 0;
+                    double e = map.elevations[i];
+                    for (int yy = y - 1; yy < y + 1; yy++)
+                    {
+                        for (int xx = x - 1; xx <= x + 1; xx++)
+                        {
+                            if ((x==xx && y==yy) || yy < 0 || yy >= map.height || xx < 0 || xx >= map.width)
+                                continue;
+
+                            int ii = xx + yy * map.width;
+                            double diff = (map.elevations[ii] - e) / (Math.Sqrt((xx - x) * (xx - x) + (yy - y) * (yy - y)));
+                            avgDiffX += diff * (xx - x);
+                            avgDiffY += diff * (yy - y);
+                            avgCnt++;
+                        }
+                    }
+                    avgDiffX /= avgCnt;
+                    avgDiffY /= avgCnt;
+                    double avgDiff = Math.Sqrt(avgDiffX * avgDiffX + avgDiffY * avgDiffY);
+                    double angle = Math.Atan(avgDiff) * 180 / Math.PI;
+                    angles[i] = (int)(angle);
+                }
+            }
+            return angles;
         }
 
         public Map GenerateMap(string type, int width, int height)

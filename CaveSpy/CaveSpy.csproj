@@ -68,10 +68,16 @@
     <None Include="complex-default.lisp">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Include="data.lisp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="default.lisp">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="packages.config" />
+    <None Include="image.lisp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="test2.lisp">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
