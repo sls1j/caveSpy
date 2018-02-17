@@ -173,7 +173,7 @@ namespace CaveSpy
 
         private static byte Mix(byte a, byte b, double opacity)
         {
-            return ClipToByteColor(a * (1 - opacity) + b * (opacity));
+            return ClipToByteColor(a + b * (opacity));
         }
 
         private static byte ConvertToByteColor(double v)

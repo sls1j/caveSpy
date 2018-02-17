@@ -1,6 +1,6 @@
 ﻿(	
 	
-	(Set lasFile "c:\maps\UT_WastachFault_L1_L2_2013_001428.las")	
+	(Set lasFile (GetArg "--las" "default.las"))
 	(Set mapFile  "c:\maps\map.map")
 	(Set drainageFile "c:\maps\drain.int")
 	(Set slopeFile "c:\maps\slope.int")
@@ -14,7 +14,7 @@
 	# fix any holes in the map -- right now this isn't a good algorithm	
 	(FillHoles (Get map))
 	#(MapGeometricMeanFilter (Get map) 7i)
-	#(MapGeometricMeanFilter (Get map) 5i)
+	(MapGeometricMeanFilter (Get map) 5i)
 
 	(SaveToFile (Get map) (Get mapFile))
 	(SaveToFile (MapDrainage (Get map) 3i) (Get drainageFile))
