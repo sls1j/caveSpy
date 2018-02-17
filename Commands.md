@@ -106,7 +106,26 @@ Example:
 ```
 ---
 
-### `(DrawIntArray <image: Image> <array : array of int> <opacity : double>)`
+### `(DrawIntArray <image: Image> <array : array of int> <color : string> <opacity : double>)`
+
+Draws an array of int intensities onto the specified image.  It a linear scale from the dimest to the brightest.
+Is uses for now a green hue.
+
+|Parameter    |Type    | Description |
+|-------------|:------:|-------------|
+|image|Image|The image to draw to|
+|array|int\[\]|The array of intensities|
+|color|string|The color in hex for instance ff0000 is red 00ff00 is green 0000ff is blue.|
+|opacity|double|The opacity of the drawing.  1.0 overwrites --> 0.5 mixes --> 0 draws nothing
+
+Example:
+```
+	(DrawIntArray (Get image) (Get array) "00ff00" 0.5d)
+```
+
+---
+
+### `(DrawLogIntArray <image: Image> <array : array of int> <color : string> <opacity : double>)`
 
 Draws an array of int intensities onto the specified image.  It uses a logrithmic scale from the dimest to the brightest.
 Is uses for now a green hue.
@@ -115,11 +134,12 @@ Is uses for now a green hue.
 |-------------|:------:|-------------|
 |image|Image|The image to draw to|
 |array|int\[\]|The array of intensities|
+|color|string|The color in hex for instance ff0000 is red 00ff00 is green 0000ff is blue.|
 |opacity|double|The opacity of the drawing.  1.0 overwrites --> 0.5 mixes --> 0 draws nothing
 
 Example:
 ```
-	(DrawIntArray (Get image) (Get array) 0.5d)
+	(DrawIntArray (Get image) (Get array) "00ff00" 0.5d)
 ```
 
 ---
@@ -287,7 +307,7 @@ Example:
 ---
 
 
-### `(MakeMap <cloud: Cloud> <width: int>)`
+### `(MakeMap <cloud: Cloud> <width: int> [<included classifications>])`
 
 Creates a map object from a .las file.  
 
@@ -295,15 +315,50 @@ Creates a map object from a .las file.
 |-------------|:------:|-------------|
 |cloud|Cloud|The cloud object read in via the Read File command|
 |width|int|The width in pixels of the map.  The height will be calculated in proportion to the physical width as defined in the .las file header.|
+|included classifications|int|Zero or more int fields that include the classifications to include.  If no classifications are specified then all points are included.|
 |return|Map|The map object to be returned|
+
+Classifications
+
+|Classification Value (bits 0:4)|Meaning|
+|--------------------|:------|
+|0|Created, never classified|
+|1|Unclassified|
+|2|Ground|
+|3|Low Vegetation|
+|4|Medium Vegetation|
+|5|High Vegetation |
+|6|Building|
+|7|Low Point (noise)|
+|8 |Model Key-point (mass point)|
+|9 |Water|
+|10 |Reserved for ASPRS Definition |
+|11| Reserved for ASPRS Definition |
+|12|Overlap Point|
+|13-31|Reserved for ASPRS Definition |
 
 Example:
 ```
-	(Set map (ReadFile( "file.las" )) 2000i)
+	(Set map (MakeMap( (Get cloud) 2000i 1i 2i)) # include unclassified and ground
 ```
 
 ---
 
+### `(MapCalculateSlopeAngle <map : Map>)`
+
+Calculates the slope of a given space withing the map and returns an array grid of all the
+angles floored to the nearest integer.
+
+|Parameter    |Type    | Description |
+|-------------|:------:|-------------|
+|map|Map|The map to calculate the slope from|
+|return| int[] | The angles rounded to the nearest degree |
+
+Example:
+```
+    (MapCalculateSlopes (Get map))
+```
+---
 
 ### `(MapDrainage <map : Map> <look distance: int>)`
 
@@ -320,7 +375,7 @@ trees.  It takes longer but give a better drainage map.
 
 Example:
 ```
-(DrawArrayInt (Get image) (MapDrainage (Get map) 15i) 1.0d)
+(DrawArrayInt (Get image) (MapDrainage (Get map) "00FF00" 15i) 1.0d)
 ```
 
 ---
@@ -451,7 +506,7 @@ Example
 	# draw an image based on the map and cave analysis
 	(Set image (MakeImage (Get map)))
 	(DrawElevationColor (Get image) (Get map) 100d, 1.0d)	# parmaters <image> <map> <meter per color cycle> <opacity>
-	(DrawIntArray (Get image) (MapDrainage (Get map) 20i) 1.0d)
+	(DrawIntArray (Get image) (MapDrainage (Get map) 20i) "00ff00" 1.0d)
 	(DrawHillsideShade (Get image) (Get map) 45d 5d 0.7d, 0.3d) #parameters <image> <map> <angle of hillshade> <distance from point of interest> <intensity of shading> <opacity>
 	#(DrawCaves (Get image) (Get caves))
 	#(DrawClassification (Get image) (Get map) 13i)

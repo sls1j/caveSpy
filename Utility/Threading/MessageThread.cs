@@ -190,7 +190,7 @@ namespace Bee.Eee.Utility.Threading
                                _msgCnt++;
                                if (_msgCnt % 10000 == 0)
                                {
-                                   Logger.Log("MessageThread: {0} Message Queue Count: {1}", GetType().Name, _messages.Count);
+                                   Logger.Log($"MessageThread: {GetType().Name} Message Queue Count: {_messages.Count}");
                                    _msgCnt = 0;
                                }
                            }
@@ -259,7 +259,7 @@ namespace Bee.Eee.Utility.Threading
 
                _running = false;
 
-               Logger.Log("Exiting thread: {0}", this.GetType().ToString());
+               Logger.Log($"Exiting thread: {this.GetType().ToString()}");
            });
         }
 

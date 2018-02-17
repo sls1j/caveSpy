@@ -11,11 +11,13 @@ namespace Bee.Eee.Utility.Logging
     /// </summary>
     public interface ILogger : ICategoryManager
     {
-        void Log(string messageFormat, params object[] args);
-        void Log(Level errorLevel, string messageFormat, params object[] args);
-        void LogException(Exception ex, string messageForamt, params object[] args);
-        void LogIf(int categoryId, string messageFormat, params object[] args);
-        void LogIf(int categoryId, Level errorLevel, string messageFormat, params object[] args);        
+        void Log(string message);
+        
+        
+        void Log(Level errorLevel, string message);
+        void LogException(Exception ex, string message);
+        void LogIf(int categoryId, string message);
+        void LogIf(int categoryId, Level errorLevel, string message);        
         ILogger CreateSub(string subProcessName);
     }
 }

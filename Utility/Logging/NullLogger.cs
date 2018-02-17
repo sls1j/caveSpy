@@ -36,27 +36,27 @@ namespace Bee.Eee.Utility.Logging
             return false;
         }
 
-        public void Log(string messageFormat, params object[] args)
+        public void Log(string message)
         {
 
         }
 
-        public void Log(Level errorLevel, string messageFormat, params object[] args)
+        public void Log(Level errorLevel, string message)
         {
 
         }
 
-        public void LogException(Exception ex, string messageForamt, params object[] args)
+        public void LogException(Exception ex, string message)
         {
 
         }
 
-        public void LogIf(int categoryId, string messageFormat, params object[] args)
+        public void LogIf(int categoryId, string message)
         {
 
         }
 
-        public void LogIf(int categoryId, Level errorLevel, string messageFormat, params object[] args)
+        public void LogIf(int categoryId, Level errorLevel, string message)
         {
 
         }

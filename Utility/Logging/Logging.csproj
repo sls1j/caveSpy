@@ -43,6 +43,7 @@
   <ItemGroup>
     <Compile Include="CategoryManager.cs" />
     <Compile Include="ConsoleLogger.cs" />
+    <Compile Include="TraceLogger.cs" />
     <Compile Include="FileLogger.cs" />
     <Compile Include="ILogger.cs" />
     <Compile Include="LoggingLevels.cs" />

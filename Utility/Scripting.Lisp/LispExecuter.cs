@@ -64,7 +64,7 @@ namespace Bee.Eee.Utility.Scripting.Lisp
             else
             {
                 _commands.Add(command.CommandName, command);
-                _logger.LogIf(_categories.ScriptLogging, Level.Debug, "Registered command: {0}", command.CommandName);
+                _logger.LogIf(_categories.ScriptLogging, Level.Debug, $"Registered command: {command.CommandName}");
             }
         }
 
@@ -125,9 +125,7 @@ namespace Bee.Eee.Utility.Scripting.Lisp
                     if (_commands.TryGetValue(sym.name, out cmd))
                     {
                         result = cmd.Command(cmd, program);
-                        _logger.LogIf(_categories.ScriptLogging, Level.Debug, "Run {0}:{1} Cmd:{2}==>{3}",
-                            first.line, first.position,
-                            cmd.CommandName, (result ?? (object)"null").ToString());
+                        _logger.LogIf(_categories.ScriptLogging, Level.Debug, $"Run {first.line}:{first.position} Cmd:{cmd.CommandName}==>{(result ?? (object)"null")}");
                     }
                     else
                         throw new LispParseException("Unknown command symbol '{0}' Line: {1}:{2}", sym.name, sym.line, sym.position);

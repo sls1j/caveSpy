@@ -14,7 +14,7 @@ namespace CaveSpy
     {
         public ScriptEngine(ILogger logger, ICategories categories)
             : base(logger, categories)
-        {            
+        {
             RegisterCommand("GetArg", Run_GetArg);
             RegisterCommand("Assert", Run_Assert);
             RegisterCommand("GetExtension", Run_GetExtension);
@@ -35,17 +35,41 @@ namespace CaveSpy
             RegisterCommand("DrawRealColor", Run_DrawRealColor);
             RegisterCommand("DrawClassification", Run_DrawClassification);
             RegisterCommand("GenerateMap", Run_GenerateMap);
-            RegisterCommand("DrawIntArray", Run_DrawIntArray);
+            RegisterCommand("DrawLogIntArray", Run_DrawLogArray);
+            RegisterCommand("DrawIntArray", Run_DrawArray);
+            RegisterCommand("MapCalculateSlopeAngle", Run_MapCalculateSlopeAngle);
         }
 
-        private object Run_DrawIntArray(LispRuntimeCommand cmd, LispList list)
+        private object Run_DrawArray(LispRuntimeCommand cmd, LispList list)
         {
-            CheckParameterCount(cmd, list, 3);
+            CheckParameterCount(cmd, list, 4);
             int c = 1;
             Image img = Run<Image>(list.items[c++]);
             int[] arr = Run<int[]>(list.items[c++]);
+            string color = Run<string>(list.items[c++]);
             double opacity = Run<double>(list.items[c++]);
-            img.DrawArrayInt(img, arr, opacity);
+            img.DrawArrayInt(img, arr, color, opacity);
+            return null;
+        }
+
+        private object Run_MapCalculateSlopeAngle(LispRuntimeCommand cmd, LispList list)
+        {
+            CheckParameterCount(cmd, list, 1);
+            int c = 1;
+            Map map = Run<Map>(list.items[c++]);
+            MapAlgorithms alg = new MapAlgorithms(Logger);
+            return alg.CalculateSlopeAngle(map);
+        }
+
+        private object Run_DrawLogArray(LispRuntimeCommand cmd, LispList list)
+        {
+            CheckParameterCount(cmd, list, 4);
+            int c = 1;
+            Image img = Run<Image>(list.items[c++]);
+            int[] arr = Run<int[]>(list.items[c++]);
+            string color = Run<string>(list.items[c++]);
+            double opacity = Run<double>(list.items[c++]);
+            img.DrawLogArrayInt(img, arr, color, opacity);
             return null;
         }
 
@@ -129,7 +153,7 @@ namespace CaveSpy
                     return int.Parse(returnValue);
                 default:
                     return returnValue;
-            }            
+            }
         }
 
         private object Run_Assert(LispRuntimeCommand cmd, LispList list)
@@ -169,7 +193,7 @@ namespace CaveSpy
         {
             object objectToSave = Run<object>(list.items[1]);
             switch (objectToSave)
-            {               
+            {
                 case Map m:
                     {
                         CheckParameterCount(cmd, list, 2);
@@ -184,6 +208,13 @@ namespace CaveSpy
                         im.Save(path);
                     }
                     break;
+                case int[] i:
+                    {
+                        CheckParameterCount(cmd, list, 2);
+                        string path = Run<string>(list.items[2]);
+                        i.Save(path);
+                    }
+                    break;
             }
 
             return null;
@@ -191,13 +222,21 @@ namespace CaveSpy
 
         private object Run_MakeMap(LispRuntimeCommand cmd, LispList list)
         {
-            CheckParameterCount(cmd, list, 2);
+            if (list.items.Count < 3)
+                throw new LispParseException("'{0}' command must have at least 2 parameters. Line: {2}:{3}",
+                        cmd.CommandName, list.line, list.position);
+
             PointCloud pc = Run<PointCloud>(list.items[1]);
             int mapWidth = Run<int>(list.items[2]);
 
             var map = new Map();
+
+            HashSet<int> includedClassifications = new HashSet<int>();
+            for (int i = 3; i < list.items.Count; i++)
+                includedClassifications.Add(Run<int>(list.items[i]));
+
             MapAlgorithms alg = new MapAlgorithms(base.Logger);
-            alg.ReadCloudIntoMap(map, mapWidth, pc);
+            alg.ReadCloudIntoMap(map, mapWidth, pc, includedClassifications);
             return map;
         }
 
@@ -284,7 +323,7 @@ namespace CaveSpy
             Map map = Run<Map>(list.items[c++]);
             int lookDistance = Run<int>(list.items[c++]);
             CaveFinderAlgorithm alg = new CaveFinderAlgorithm(Logger);
-            
+
             return alg.MapDrainage(map, lookDistance);
         }
 
@@ -295,7 +334,7 @@ namespace CaveSpy
 
         private object Run_ReadFile(LispRuntimeCommand cmd, LispList list)
         {
-            CheckParameterCount(cmd, list, 1,2);
+            CheckParameterCount(cmd, list, 1, 2);
             var path = Run<string>(list.items[1]);
 
             string ext = Path.GetExtension(path);
@@ -319,6 +358,11 @@ namespace CaveSpy
                     {
                         var map = Map.Load(path, base.Logger);
                         return map;
+                    }
+                case ".int":
+                    {
+                        var i = Extensions.LoadArray(path);
+                        return i;
                     }
                 default:
                     throw new InvalidOperationException("Can only support reading .las and .map files.");

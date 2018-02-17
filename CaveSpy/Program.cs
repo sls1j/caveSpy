@@ -34,9 +34,13 @@ namespace CaveSpy
             }
 
             DateTime startTime = DateTime.UtcNow;
-            Categories cat = new Categories();            
+            Categories cat = new Categories();
 
-            ILogger logger = new ConsoleLogger("Main");
+            ILogger logger;
+            if (Debugger.IsAttached)
+                logger = new TraceLogger("Main");
+            else
+                logger = new ConsoleLogger("Main");
             ScriptEngine se = new ScriptEngine(logger, cat);
             if (verbose)
              {
@@ -47,8 +51,6 @@ namespace CaveSpy
 
 
             Console.WriteLine($"Processing time: {DateTime.UtcNow - startTime}");
-            //if (Debugger.IsAttached)
-            //    Console.ReadKey();
         }
 
         private static void PrintError(string errorMessage)

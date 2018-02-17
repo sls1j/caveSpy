@@ -19,7 +19,7 @@ namespace CaveSpy
         private int width;
         private byte[] image;
 
-        public Image(Map m)            
+        public Image(Map m)
         {
             width = m.width;
             height = m.height;
@@ -39,7 +39,7 @@ namespace CaveSpy
             int vectorY = (int)(step * Math.Sin(headingRad));
             int vectorII = vectorY * width + vectorX;
             var elevations = map.elevations;
-            for (int y = 0, i=0; y < height; y++)
+            for (int y = 0, i = 0; y < height; y++)
             {
                 for (int x = 0; x < width; x++, i++)
                 {
@@ -55,8 +55,8 @@ namespace CaveSpy
                     int iii = ii * 4;
                     byte c = ConvertToByteColor(m * intensity + 0.5);
                     image[iii] = Mix(image[iii], c, opacity);
-                    image[iii + 1] = Mix(image[iii+1], c, opacity);
-                    image[iii + 2] = Mix(image[iii+2], c, opacity);
+                    image[iii + 1] = Mix(image[iii + 1], c, opacity);
+                    image[iii + 2] = Mix(image[iii + 2], c, opacity);
                     image[iii + 3] = 255;
                 }
             }
@@ -77,36 +77,12 @@ namespace CaveSpy
             }
         }
 
-        public void DrawCaves(List<Cave> caves, double opacity)
-        {
-            for (int i = 0; i < caves.Count; i++)
-            {
-                var cave = caves[i];
-                int ii = (int)(cave.X + cave.Y * width) * 4;
-                image[ii] = Mix(image[ii], 0, opacity);
-                image[ii + 1] = Mix(image[ii+1], 0, opacity);
-                image[ii + 2] = Mix(image[ii+2], 255, opacity);
-            }
-        }
-
-        public void DrawElevationColor(Image img, Map map, double spacing, double opacity)
-        {            
-            for (int i = 0, ii = 0; i < map.elevations.Length; i++, ii += 4)
-            {
-                double v = map.elevations[i];
-
-                byte r, g, b;
-                HueToRGB(v / spacing, 0.8, 0.8, out r, out g, out b);
-                image[ii] = Mix(image[ii], b, opacity);
-                image[ii + 1] = Mix(image[ii+1], g, opacity);
-                image[ii + 2] = Mix(image[ii+2], r, opacity);
-            }
-        }
-
-        public void DrawArrayInt(Image img, int[] array, double opacity)
+        internal void DrawArrayInt(Image img, int[] array, string color, double opacity)
         {
             if (img.width * img.height != array.Length)
                 throw new InvalidOperationException("Array must be the same dimension of the image!");
+
+            (var r, var g, var b) = color.ToColorDouble();
 
             int max = int.MinValue;
             int min = int.MaxValue;
@@ -119,23 +95,85 @@ namespace CaveSpy
                     min = v;
             }
 
-            double logDiff = Math.Log10( max - min + 1 );
+            double diff = max - min;
+            double k = 1.0 / diff;
 
-            for (int i = 0, ii=0; i < array.Length; i++, ii+=4)
+            for (int i = 0, ii = 0; i < array.Length; i++, ii += 4)
+            {
+                double c = (array[i] - min) * k;
+                byte rr = ConvertToByteColor(c * r);
+                byte gg = ConvertToByteColor(c * g);
+                byte bb = ConvertToByteColor(c * b);
+                image[ii] = Mix(image[ii], bb, opacity);
+                image[ii + 1] = Mix(image[ii + 1], gg, opacity);
+                image[ii + 2] = Mix(image[ii + 2], rr, opacity);
+            }
+        }
+
+        public void DrawCaves(List<Cave> caves, double opacity)
+        {
+            for (int i = 0; i < caves.Count; i++)
+            {
+                var cave = caves[i];
+                int ii = (int)(cave.X + cave.Y * width) * 4;
+                image[ii] = Mix(image[ii], 0, opacity);
+                image[ii + 1] = Mix(image[ii + 1], 0, opacity);
+                image[ii + 2] = Mix(image[ii + 2], 255, opacity);
+            }
+        }
+
+        public void DrawElevationColor(Image img, Map map, double spacing, double opacity)
+        {
+            for (int i = 0, ii = 0; i < map.elevations.Length; i++, ii += 4)
+            {
+                double v = map.elevations[i];
+
+                byte r, g, b;
+                HueToRGB(v / spacing, 0.8, 0.8, out r, out g, out b);
+                image[ii] = Mix(image[ii], b, opacity);
+                image[ii + 1] = Mix(image[ii + 1], g, opacity);
+                image[ii + 2] = Mix(image[ii + 2], r, opacity);
+            }
+        }
+
+        public void DrawLogArrayInt(Image img, int[] array, string color, double opacity)
+        {
+            if (img.width * img.height != array.Length)
+                throw new InvalidOperationException("Array must be the same dimension of the image!");
+
+            (var r, var g, var b) = color.ToColorDouble();
+
+            int max = int.MinValue;
+            int min = int.MaxValue;
+            for (int i = 0; i < array.Length; i++)
+            {
+                int v = array[i];
+                if (v > max)
+                    max = v;
+                if (v < min)
+                    min = v;
+            }
+
+            double logDiff = Math.Log10(max - min + 1);
+
+            for (int i = 0, ii = 0; i < array.Length; i++, ii += 4)
             {
                 int v = array[i];
 
-                byte c = (byte)(Math.Log10(v - min + 1) * 256 / logDiff);
+                double c = Math.Log10(v - min + 1) / logDiff;
+                byte rr = ConvertToByteColor(c * r);
+                byte gg = ConvertToByteColor(c * g);
+                byte bb = ConvertToByteColor(c * b);
 
-                image[ii] = Mix(image[ii], 0, opacity);
-                image[ii+1] = Mix(image[ii+1], c, opacity);
-                image[ii+2] = Mix(image[ii+2], 0, opacity);
+                image[ii] = Mix(image[ii], bb, opacity);
+                image[ii + 1] = Mix(image[ii + 1], gg, opacity);
+                image[ii + 2] = Mix(image[ii + 2], rr, opacity);
             }
         }
 
         private static byte Mix(byte a, byte b, double opacity)
         {
-            return ClipToByteColor(a * (1 - opacity) + b * (opacity));
+            return ClipToByteColor(a + b * (opacity));
         }
 
         private static byte ConvertToByteColor(double v)
@@ -292,6 +330,6 @@ namespace CaveSpy
             }
         }
 
-       
+
     }
 }

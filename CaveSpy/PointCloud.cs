@@ -45,6 +45,7 @@ namespace CaveSpy
                 
                 switch (_header.PointDataFormat)
                 {
+                    case 0: _readFunc = PointData.ReadFormat0; break;
                     case 1: _readFunc = PointData.ReadFormat1; break;
                     case 2: _readFunc = PointData.ReadFormat2; break;
                     case 3: _readFunc = PointData.ReadFormat3; break;
@@ -52,6 +53,11 @@ namespace CaveSpy
                         throw new NotImplementedException($"Format {_header.PointDataFormat} not supported.");
                 }
             }
+        }
+
+        public void LogHeader()
+        {
+            _logger.Log($"");
         }
 
         public void HandlePoints(Action<int, PointData> handler)
@@ -330,6 +336,19 @@ namespace CaveSpy
         public ushort Green;
         public ushort Blue;
 
+        public static void ReadFormat0(PointData p, BinaryReader reader)
+        {
+            p.X = reader.ReadInt32();
+            p.Y = reader.ReadInt32();
+            p.Z = reader.ReadInt32();
+            p.Intensity = reader.ReadUInt16();
+            p.ReturnBits = reader.ReadByte();
+            p.Classification = reader.ReadByte();
+            p.ScanAngleRank = reader.ReadByte();
+            p.UserData = reader.ReadByte();
+            p.PointSourceID = reader.ReadUInt16();
+        }
+
         public static void ReadFormat1(PointData p, BinaryReader reader)
         {
             p.X = reader.ReadInt32();
@@ -377,6 +396,8 @@ namespace CaveSpy
             p.Green = reader.ReadUInt16();
             p.Blue = reader.ReadUInt16();
         }
+
+       
     }
 
     [Serializable]
@@ -407,7 +428,7 @@ namespace CaveSpy
             RecordId = reader.ReadUInt16();
             RecordLengthAfterHeader = reader.ReadUInt16();
             Description = reader.ReadString(32);
-            Data = reader.ReadBytes(RecordLengthAfterHeader);
+            Data = reader.ReadBytes(RecordLengthAfterHeader);            
         }
     }
 }

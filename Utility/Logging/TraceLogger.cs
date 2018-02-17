@@ -9,18 +9,18 @@ namespace Bee.Eee.Utility.Logging
     /// <summary>
     /// Dumps logs to the console.
     /// </summary>
-    public class ConsoleLogger : ILogger
+    public class TraceLogger : ILogger
     {
         private string _process;
         private string _subProcess;
         private ICategoryManager _categoryManager;
 
-        public ConsoleLogger(string process, object categories = null)
+        public TraceLogger(string process, object categories = null)
             :this(new CategoryManager(), process, "Main", categories)
         {
         }
 
-        public ConsoleLogger(ICategoryManager categoryManager, string process, string subProcess = null, object categories = null)
+        public TraceLogger(ICategoryManager categoryManager, string process, string subProcess = null, object categories = null)
         {
             if (null == categoryManager)
                 throw new ArgumentNullException("categoryManager");
@@ -43,7 +43,7 @@ namespace Bee.Eee.Utility.Logging
 
         public ILogger CreateSub(string subProcessName)
         {
-            return new ConsoleLogger(_categoryManager, _process, subProcessName);
+            return new TraceLogger(_categoryManager, _process, subProcessName);
         }
 
         public void DisableCategroy(int categoryId)
@@ -69,23 +69,7 @@ namespace Bee.Eee.Utility.Logging
 
         public void Log(Level errorLevel, string message)
         {
-            switch (errorLevel)
-            {
-                case Level.Info:
-                    Console.ForegroundColor = ConsoleColor.White; break;
-                case Level.Debug:
-                    Console.ForegroundColor = ConsoleColor.Gray; break;
-                case Level.Warn:
-                    Console.ForegroundColor = ConsoleColor.DarkYellow; break;
-                case Level.Error:
-                    Console.ForegroundColor = ConsoleColor.Red; break;
-                case Level.Exception:
-                    Console.ForegroundColor = ConsoleColor.DarkCyan; break;
-                case Level.Notify:
-                    Console.ForegroundColor = ConsoleColor.Green; break;
-            }            
-
-            Console.WriteLine($"{DateTime.Now} {_process} {_subProcess ?? "--"} {message}");
+            System.Diagnostics.Trace.WriteLine($"{errorLevel.ToString()} {DateTime.Now} {_process} {_subProcess ?? "--"} {message}");
         }
 
         public void LogException(Exception ex, string message)

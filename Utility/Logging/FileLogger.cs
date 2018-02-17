@@ -119,42 +119,38 @@ namespace Bee.Eee.Utility.Logging
             }
         }
 
-        public void Log(string messageFormat, params object[] args)
+        public void Log(string message)
         {
-            Log(Level.Info, messageFormat, args);
+            Log(Level.Info, message);
         }
 
-        public void Log(Level errorLevel, string messageFormat, params object[] args)
+        public void Log(Level errorLevel, string message)
         {
-            string message = string.Format(messageFormat, args);
-            string log = string.Format("{0} {1} {2} {3}",
-                DateTime.Now, _process, _subProcess ?? "--", message);
+            string log = $"{DateTime.Now} {_process} {_subProcess ?? "--"} {message}";
 
             WriteLog(log, errorLevel);
         }
 
-        public void LogException(Exception ex, string messageFormat, params object[] args)
+        public void LogException(Exception ex, string message)
         {
             StringBuilder sb = new StringBuilder();
-            sb.AppendFormat(messageFormat, args);
-            sb.AppendFormat("{0} : {1}", ex.GetType().Name, ex.Message);
-            sb.AppendLine();
-            sb.AppendFormat("Stack: {0}", ex.StackTrace);
-            sb.AppendLine();
+            sb.AppendLine(message);
+            sb.AppendLine($"{ex.GetType().Name} : {ex.Message}");
+            sb.AppendLine($"Stack: {ex.StackTrace}");
 
-            Log(Level.Exception, "{0}", sb.ToString());
+            Log(Level.Exception, sb.ToString());
         }
 
-        public void LogIf(int categoryId, string messageFormat, params object[] args)
+        public void LogIf(int categoryId, string message)
         {
             if (_categoryManager.IsCategoryEnabled(categoryId))
-                Log(Level.Info, messageFormat, args);
+                Log(Level.Info, message);
         }
 
-        public void LogIf(int categoryId, Level errorLevel, string messageFormat, params object[] args)
+        public void LogIf(int categoryId, Level errorLevel, string message)
         {
             if (_categoryManager.IsCategoryEnabled(categoryId))
-                Log(errorLevel, messageFormat, args);
+                Log(errorLevel, message);
         }
 
         public void RegisterCategories(object categories)
