@@ -34,6 +34,7 @@ namespace Bee.Eee.Utility.Scripting.Lisp
                 switch (c)
                 {
                     case '#':
+                    case ';':
                         // eat the comment comment until we find a new line.
                         int newIndex = lispString.IndexOf('\n', i);
                         if (newIndex > 0)
