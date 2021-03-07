@@ -3,7 +3,7 @@
 
 
 	# fix any holes in the map -- right now this isn't a good algorithm
-	(FillHoles (Get map))
+	(FillHoles (Get map))	
 
 	# draw an image based on the map and cave analysis
 	(Set image (MakeImage (Get map)))

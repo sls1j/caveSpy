@@ -1,13 +1,9 @@
-﻿using System;
+﻿using Bee.Eee.Utility.Extensions.ListExtensions;
+using Bee.Eee.Utility.Logging;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Xml.Linq;
-using System.Xml.XPath;
-using System.Xml;
-using System.IO;
-using Bee.Eee.Utility.Extensions.ListExtensions;
-using Bee.Eee.Utility.Logging;
+using System.Reflection;
 
 namespace Bee.Eee.Utility.Scripting.Lisp
 {
@@ -30,6 +26,7 @@ namespace Bee.Eee.Utility.Scripting.Lisp
       _commands = new Dictionary<string, LispRuntimeCommand>();
 
       RegisterCommand("Get", EX_GetVariable);
+      RegisterCommand("GetMember", EX_GetVariableMember);
       RegisterCommand("Set", EX_SetVariable);
       RegisterCommand("GetEnvironment", EX_GetEnvironment);
       RegisterCommand("If", EX_If);
@@ -46,7 +43,13 @@ namespace Bee.Eee.Utility.Scripting.Lisp
       RegisterCommand("GreaterThanEqual", Ex_GreaterThanEqual);
       RegisterCommand("LessThan", Ex_LessThan);
       RegisterCommand("LessThanEqual", Ex_LessThanEqual);
+      RegisterCommand("ForEach", Ex_ForEach);
+      RegisterCommand("GetArg", Ex_GetArg);
+      RegisterCommand("Assert", Ex_Assert);
+      RegisterCommand("Array", Ex_Array);
     }
+
+    
 
     protected ILogger Logger { get { return _logger; } }
 
@@ -154,13 +157,13 @@ namespace Bee.Eee.Utility.Scripting.Lisp
             _logger.LogIf(_categories.ScriptLogging, Level.Debug, $"Run {first.line}:{first.position} Cmd:{cmd.CommandName}==>{(result ?? (object)"null")}");
           }
           else
-            throw new LispParseException("Unknown command symbol '{0}' Line: {1}:{2}", sym.name, sym.line, sym.position);
+            throw new LispParseException($"Unknown command symbol '{sym.name}' Line: {sym.line}:{sym.position}");
         }
         catch (Exception ex)
         {
           if (!(ex is LispParseException))
           {
-            throw new LispParseException("{0} Line {1}:{2}", ex.Message, first.line, first.position);
+            throw new LispParseException($"{ex.Message} Line {first.line}:{first.position}", ex);
           }
           else
             throw;
@@ -175,15 +178,14 @@ namespace Bee.Eee.Utility.Scripting.Lisp
             result = Run(item as LispList);
           }
           else
-            throw new LispParseException("Expected a LispList but got a {0} Line: {0}:{1}", item.GetType(), item.line, item.position);
+            throw new LispParseException($"Expected a LispList but got a {item.GetType().Name} Line: {item.line}:{item.position}");
         }
       }
       else
-        throw new LispParseException("Can only execute lists and symbols. Line: {0}:{1}", first.line, first.position);
+        throw new LispParseException($"Can only execute lists and symbols. Line: {first.line}:{first.position}");
 
       return result;
     }
-
 
     private object EX_SetVariable(LispRuntimeCommand cmd, LispList program)
     {
@@ -200,7 +202,6 @@ namespace Bee.Eee.Utility.Scripting.Lisp
       return variableValue;
     }
 
-
     private object EX_GetVariable(LispRuntimeCommand cmd, LispList program)
     {
       CheckParameterCount(cmd, program, 1);
@@ -211,11 +212,28 @@ namespace Bee.Eee.Utility.Scripting.Lisp
       object value = null;
       if (_var.TryGetValue(variableName, out value))
         return value;
-      else
-        throw new LispParseException("GetVariable command failed.  Variable '{0}' doesn't exist. Line: {1}:{2}",
-            variableName, program.items[1].line, program.items[1].position);
+      else {
+        var item = program.items[1];
+        throw new LispParseException($"GetVariable command failed.  Variable '{variableName}' doesn't exist. Line: {item.line}:{item.position}");
+      }
     }
 
+    private object EX_GetVariableMember(LispRuntimeCommand cmd, LispList program)
+    {
+      CheckParameterCount(cmd, program, 2);
+      int c = 1;
+      object instance = Run(program.items[c++]);
+      string name = Run<string>(program.items[c++]);
+      var member = instance.GetType().GetMember(name)[0];
+      switch(member)
+      {
+        case PropertyInfo property:
+          return property.GetValue(instance);
+        case FieldInfo field:
+          return field.GetValue(instance);
+      }
+      return null;
+    }
 
     private object EX_GetEnvironment(LispRuntimeCommand cmd, LispList program)
     {
@@ -228,8 +246,10 @@ namespace Bee.Eee.Utility.Scripting.Lisp
       if (_env.TryGetValue(variableName, out value))
         return value;
       else
-        throw new LispParseException("GetEnvironment command failed.  Variable '{0}' doesn't exist. Line: {1}:{2}",
-            variableName, program.items[1].line, program.items[1].position);
+      {
+        var item = program.items[1];
+        throw new LispParseException($"GetEnvironment command failed.  Variable '{variableName}' doesn't exist. Line: {item.line}:{item.position}");
+      }
     }
 
     private object EX_If(LispRuntimeCommand cmd, LispList program)
@@ -278,7 +298,7 @@ namespace Bee.Eee.Utility.Scripting.Lisp
       object retVal = null;
 
       if (program.items.Count < 3)
-        throw new LispParseException("'{0}' command must have at least 2 parameters. Line: {2}:{3}", cmd.CommandName, program.line, program.position);
+        throw new LispParseException($"'{cmd.CommandName}' command must have at least 2 parameters. Line: {program.line}:{program.position}");
 
       long loopCount = GetLongValue(cmd, program, 1, false);
 
@@ -297,8 +317,7 @@ namespace Bee.Eee.Utility.Scripting.Lisp
     {
       object retVal = null;
       if (program.items.Count < 2)
-        throw new LispParseException("'{0}' command must have at least {1} parameter. Line: {2}:{3}",
-                cmd.CommandName, 1, program.line, program.position);
+        throw new LispParseException($"'{cmd.CommandName}' command must have at least 1 parameter. Line: {program.line}:{program.position}");
 
       LispItem conditionalStatement = program.items[1];
 
@@ -339,6 +358,29 @@ namespace Bee.Eee.Utility.Scripting.Lisp
       return (bool)rightResult;
     }
 
+    private object Ex_ForEach(LispRuntimeCommand cmd, LispList list)
+    {
+      if (list.items.Count < 3)
+      {
+        throw new LispParseException($"'{cmd.CommandName}' command expects more than 1 parameters. Line: {list.line}:{list.position}");
+      }
+
+      string variableName = Run<string>(list.items[1]);
+      string[] loopItems = Run<string[]>(list.items[2]);
+
+      foreach (string variableValue in loopItems)
+      {
+        SetVariable(variableName, variableValue);
+
+        for (int i = 2; i < list.items.Count; i++)
+        {
+          Run(list.items[i]);
+        }
+      }
+
+      return null;
+    }
+
     private object Ex_And(LispRuntimeCommand cmd, LispList program)
     {
       CheckParameterCount(cmd, program, 2);
@@ -357,8 +399,7 @@ namespace Bee.Eee.Utility.Scripting.Lisp
     private object Ex_Add(LispRuntimeCommand cmd, LispList program)
     {
       if (program.items.Count - 1 < 2)
-        throw new LispParseException("'{0}' command must have at least {1} parameters. Line: {2}:{3}",
-            cmd.CommandName, 2, program.line, program.position);
+        throw new LispParseException($"'{cmd.CommandName}' command must have at least 2 parameters. Line: {program.line}:{program.position}");
 
       long accumulator = GetLongValue(cmd, program, 1, false);
       for (int i = 2; i < program.items.Count; i++)
@@ -373,8 +414,7 @@ namespace Bee.Eee.Utility.Scripting.Lisp
     private object Ex_Sub(LispRuntimeCommand cmd, LispList program)
     {
       if (program.items.Count - 1 < 2)
-        throw new LispParseException("'{0}' command must have at least {1} parameters. Line: {2}:{3}",
-            cmd.CommandName, 2, program.line, program.position);
+        throw new LispParseException($"'{cmd.CommandName}' command must have at least 2 parameters. Line: {program.line}:{program.position}");
 
       long accumulator = GetLongValue(cmd, program, 1, false);
       for (int i = 2; i < program.items.Count; i++)
@@ -418,7 +458,60 @@ namespace Bee.Eee.Utility.Scripting.Lisp
       return a <= b;
     }
 
+    private object Ex_Array(LispRuntimeCommand cmd, LispList list)
+    {
+      return list.items.Skip(1).Select(i => Run<string>(i)).ToArray();
+    }
 
+    private object Ex_Assert(LispRuntimeCommand cmd, LispList list)
+    {
+      CheckParameterCount(cmd, list, 1);
+      bool isOkay = Run<bool>(list.items[1]);
+      if (isOkay)
+        return true;
+      else
+        throw new Exception($"Failed Assert on {list.line}:{list.position}");
+    }
+
+    private object Ex_GetArg(LispRuntimeCommand cmd, LispList list)
+    {
+      CheckParameterCount(cmd, list, 1, 2);
+      string arg = Run<string>(list.items[1]);
+      object defaultValue = null;
+      if (list.items.Count > 2)
+        defaultValue = Run<object>(list.items[2]);
+      else
+        defaultValue = string.Empty;
+
+      var args = Environment.GetCommandLineArgs();
+      string returnValue = null;
+      for (int i = 0; i < args.Length; i++)
+      {
+        var a = args[i];
+        if (a == arg)
+        {
+          if (i + 1 < args.Length)
+            returnValue = args[i + 1];
+          else
+            break;
+        }
+      }
+
+      if (returnValue == null)
+        return defaultValue;
+
+      switch (defaultValue)
+      {
+        case double d:
+          return double.Parse(returnValue);
+
+        case int i:
+          return int.Parse(returnValue);
+
+        default:
+          return returnValue;
+      }
+    }
 
     /// <summary>
     /// Gets a value from the parameter.  If that parameter needs sto be executed to get the value then it is.
@@ -448,17 +541,14 @@ namespace Bee.Eee.Utility.Scripting.Lisp
         return (long)v;
     }
 
-
     protected static void CheckParameterCount(LispRuntimeCommand cmd, LispList program, params int[] expectedCounts)
     {
       if (!expectedCounts.Contains(program.items.Count - 1))
       {
         if (expectedCounts.Length == 1)
-          throw new LispParseException("'{0}' command must have exactly {1} parameters. Line: {2}:{3}",
-              cmd.CommandName, expectedCounts[0], program.line, program.position);
+          throw new LispParseException($"'{cmd.CommandName}' command must have exactly {expectedCounts[0]} parameters. Line: {program.line}:{program.position}");
         else
-          throw new LispParseException("'{0}' command expects {1} parameters. Line: {2}:{3}",
-              cmd.CommandName, expectedCounts.ToDelimited("", "", " or "), program.line, program.position);
+          throw new LispParseException($"'{cmd.CommandName}' command expects {expectedCounts.ToDelimited("","", " or ")} parameters. Line: {program.line}:{program.position}");
       }
     }
 
@@ -483,6 +573,7 @@ namespace Bee.Eee.Utility.Scripting.Lisp
   public class LispRuntimeCommand
   {
     public string CommandName;
+
     public LispCommandDelegate Command;
   }
 }

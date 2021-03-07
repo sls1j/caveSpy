@@ -1,4 +1,4 @@
-﻿using Bee.Eee.Utility.Logging;
+﻿ using Bee.Eee.Utility.Logging;
 using Bee.Eee.Utility.Threading;
 using System;
 using System.Collections.Generic;
@@ -13,14 +13,7 @@ namespace CaveSpy
 {
     class CaveFinderAlgorithm
     {
-        private ILogger _logger;
-
-        public CaveFinderAlgorithm(ILogger logger)
-        {
-            _logger = logger.CreateSub("CaveFingerAlg");
-        }
-
-        public List<Cave> FindCaves(Map map, double floodDepth)
+        public static List<Cave> FindCaves(ILogger log, Map map, double floodDepth)
         {
             int[] minCount = new int[map.elevations.Length];
             var results = new List<Cave>();
@@ -45,7 +38,7 @@ namespace CaveSpy
                             for (int x = 1; x < map.width - 1; x++, ii++)
                             {
 
-                                int size = Flood(map, x, yy, floodDepth, 300);
+                                int size = Flood(log, map, x, yy, floodDepth, 300);
                                 if (size > 5)
                                 {
                                     Cave c = new Cave() { X = x, Y = yy, Z = map.elevations[ii] };
@@ -65,7 +58,7 @@ namespace CaveSpy
 
                     int i = y * map.height;
                     if (y % 4 == 0)
-                        _logger.Log(Level.Info, $"Flood Procssing {i:0,000}/{total:0,000} {(double)i / (double)total * 100:0.00}% points via flood: cnt {results.Count}");
+                        log.Log(Level.Info, $"Flood Procssing {i:0,000}/{total:0,000} {(double)i / (double)total * 100:0.00}% points via flood: cnt {results.Count}");
                 }
 
                 // resync all the threads
@@ -78,7 +71,7 @@ namespace CaveSpy
             return results;
         }
 
-        private int Flood(Map map, int xStart, int yStart, double floodHeight, int maxSize)
+        private static int Flood(ILogger log, Map map, int xStart, int yStart, double floodHeight, int maxSize)
         {
             HashSet<int> flooded = new HashSet<int>();
             int size = 0;
@@ -129,7 +122,7 @@ namespace CaveSpy
             }
         }
 
-        public int[] MapDrainage(Map map, int lookDistance)
+        public static int[] MapDrainage(ILogger log, Map map, int lookDistance)
         {
             int[] result = new int[map.elevations.Length];
             int threadCount = System.Environment.ProcessorCount * 2;
@@ -142,7 +135,7 @@ namespace CaveSpy
                 for (int yLoop = 0; yLoop < map.height; yLoop++)
                 {
                     if (yLoop % 25 == 0)
-                        _logger.Log(Level.Info, $"Drainage Procssing {yLoop:0,000}/{map.height:0,000} {(double)yLoop / (double)map.height * 100:0.00}%");
+                        log.Log(Level.Info, $"Drainage Procssing {yLoop:0,000}/{map.height:0,000} {(double)yLoop / (double)map.height * 100:0.00}%");
 
                     s.WaitOne();
                     ThreadPool.QueueUserWorkItem(o =>
@@ -207,7 +200,7 @@ namespace CaveSpy
 
             }
             sw.Stop();
-            _logger.Log($"Time taken: {sw.ElapsedMilliseconds}ms");
+            log.Log($"Time taken: {sw.ElapsedMilliseconds}ms");
             return result;
         }
 

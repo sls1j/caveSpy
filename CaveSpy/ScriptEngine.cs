@@ -15,35 +15,35 @@ namespace CaveSpy
     public ScriptEngine(ILogger logger, ICategories categories)
         : base(logger, categories)
     {
-      RegisterCommand("GetArg", Run_GetArg);
-      RegisterCommand("Assert", Run_Assert);
-      RegisterCommand("GetExtension", Run_GetExtension);
       RegisterCommand("ChangeExtension", Run_ChangeExtension);
+      RegisterCommand("CorrelationFilter", Run_CorrelationFilter);
+      RegisterCommand("DrawArray", Run_DrawArray);
+      RegisterCommand("DrawCaves", Run_DrawCaves);
+      RegisterCommand("DrawClassification", Run_DrawClassification);
+      RegisterCommand("DrawElevationColor", Run_DrawElevationColor);
+      RegisterCommand("DrawHoles", Run_DrawHoles);
+      RegisterCommand("DrawHillsideShade", Run_DrawHillsideShade);
+      RegisterCommand("DrawLogArray", Run_DrawLogArray);
+      RegisterCommand("DrawRealColor", Run_DrawRealColor);
+      RegisterCommand("DrawSlopeColor", Run_DrawSlopeColor);
+      RegisterCommand("Echo", Run_Echo);
+      RegisterCommand("EnumerateDirectory", Run_EnumerateDirectory);
       RegisterCommand("FileExists", Run_FileExists);
-      RegisterCommand("ReadFile", Run_ReadFile);
-      RegisterCommand("SaveToFile", Run_SaveToFile);
-      RegisterCommand("MakeMap", Run_MakeMap);
       RegisterCommand("FillHoles", Run_FillHoles);
       RegisterCommand("FindCavesByFlood", Run_FindCavesByFlood);
-      RegisterCommand("MapGeometricMeanFilter", MapGeometricMeanFilter);
-      RegisterCommand("MakeImage", Run_MakeImage);
-      RegisterCommand("DrawElevationColor", Run_DrawElevationColor);
-      RegisterCommand("DrawHillsideShade", Run_DrawHillsideShade);
-      RegisterCommand("DrawCaves", Run_DrawCaves);
-      RegisterCommand("DrawSlopeColor", Run_DrawSlopeColor);
-      RegisterCommand("MapDrainage", Run_MapDrainage);
-      RegisterCommand("DrawRealColor", Run_DrawRealColor);
-      RegisterCommand("DrawClassification", Run_DrawClassification);
       RegisterCommand("GenerateMap", Run_GenerateMap);
-      RegisterCommand("DrawLogIntArray", Run_DrawLogArray);
-      RegisterCommand("DrawIntArray", Run_DrawArray);
+      RegisterCommand("GetExtension", Run_GetExtension);
+      RegisterCommand("LevelDetectFilter", Run_LevelDetectFilter);
+      RegisterCommand("MakeImage", Run_MakeImage);
+      RegisterCommand("MakeMap", Run_MakeMap);
       RegisterCommand("MapCalculateSlopeAngle", Run_MapCalculateSlopeAngle);
+      RegisterCommand("MapDrainage", Run_MapDrainage);
+      RegisterCommand("MapGeometricMeanFilter", MapGeometricMeanFilter);
+      RegisterCommand("MorphologicalFilter", Run_MorphologicalFilter);
+      RegisterCommand("ReadFile", Run_ReadFile);
+      RegisterCommand("SaveToFile", Run_SaveToFile);
       RegisterCommand("SelectOne", Run_SelectOne);
-      RegisterCommand("ForEach", Run_ForEach);
-      RegisterCommand("Array", Run_Array);
-      RegisterCommand("EnumerateDirectory", Run_EnumerateDirectory);
-      RegisterCommand("Echo", Run_Echo);
-    }
+    }    
 
     public void RunScript(string path)
     {
@@ -62,24 +62,9 @@ namespace CaveSpy
         throw new ArgumentOutOfRangeException("N must be odd for GeometricMeanFilter");
 
       var alg = new MapAlgorithms(Logger);
-      alg.GeometricMeanFilter(map, N);
+      var newMap = alg.GeometricMeanFilter(map, N);
 
-      return null;
-    }
-
-    private object Run_Array(LispRuntimeCommand cmd, LispList list)
-    {
-      return list.items.Skip(1).Select(i => Run<string>(i)).ToArray();
-    }
-
-    private object Run_Assert(LispRuntimeCommand cmd, LispList list)
-    {
-      CheckParameterCount(cmd, list, 1);
-      bool isOkay = Run<bool>(list.items[1]);
-      if (isOkay)
-        return true;
-      else
-        throw new Exception($"Failed Assert on {list.line}:{list.position}");
+      return newMap;
     }
 
     private object Run_ChangeExtension(LispRuntimeCommand cmd, LispList list)
@@ -96,10 +81,23 @@ namespace CaveSpy
       CheckParameterCount(cmd, list, 4);
       int c = 1;
       Image img = Run<Image>(list.items[c++]);
-      int[] arr = Run<int[]>(list.items[c++]);
+      object arr = Run(list.items[c++]);
       string color = Run<string>(list.items[c++]);
       double opacity = Run<double>(list.items[c++]);
-      img.DrawArrayInt(img, arr, color, opacity);
+      img.DrawArray(img, arr, color, opacity);
+      return null;
+    }
+
+    private object Run_DrawHoles(LispRuntimeCommand cmd, LispList list)
+    {
+      CheckParameterCount(cmd, list, 5);
+      int c = 1;
+      Image img = Run<Image>(list.items[c++]);
+      Map map = Run<Map>(list.items[c++]);
+      byte r = (byte)Run<int>(list.items[c++]);
+      byte g = (byte)Run<int>(list.items[c++]);
+      byte b = (byte)Run<int>(list.items[c++]);
+      img.DrawHoles(map,r,g,b);
       return null;
     }
 
@@ -131,7 +129,7 @@ namespace CaveSpy
       int c = 1;
       CheckParameterCount(cmd, list, 4);
       Image img = Run<Image>(list.items[c++]);
-      Map map = Run<Map>(list.items[c++]);
+      double[] map = Run<double[]>(list.items[c++]);
       double spacing = Run<double>(list.items[c++]);
       double opacity = Run<double>(list.items[c++]);
 
@@ -146,7 +144,7 @@ namespace CaveSpy
       int c = 1;
       CheckParameterCount(cmd, list, 6);
       Image img = Run<Image>(list.items[c++]);
-      Map map = Run<Map>(list.items[c++]);
+      double[] map = Run<double[]>(list.items[c++]);
       double heading = Run<double>(list.items[c++]);
       double step = Run<double>(list.items[c++]);
       double intensity = Run<double>(list.items[c++]);
@@ -162,7 +160,7 @@ namespace CaveSpy
       CheckParameterCount(cmd, list, 4);
       int c = 1;
       Image img = Run<Image>(list.items[c++]);
-      int[] arr = Run<int[]>(list.items[c++]);
+      object arr = Run(list.items[c++]);
       string color = Run<string>(list.items[c++]);
       double opacity = Run<double>(list.items[c++]);
       img.DrawLogArrayInt(img, arr, color, opacity);
@@ -214,8 +212,8 @@ namespace CaveSpy
       Map map = Run<Map>(list.items[1]);
       MapAlgorithms alg = new MapAlgorithms(base.Logger);
       //alg.LinearFillMap(map);
-      alg.EdgeFillMapAlgorithm(map);
-      return null;
+      //alg.EdgeFillMapAlgorithm(map);
+      return alg.FillHole(map);      
     }
 
     private object Run_FindCavesByFlood(LispRuntimeCommand cmd, LispList list)
@@ -223,32 +221,33 @@ namespace CaveSpy
       CheckParameterCount(cmd, list, 2);
       Map map = Run<Map>(list.items[1]);
       double depth = Run<double>(list.items[2]);
-      CaveFinderAlgorithm finder = new CaveFinderAlgorithm(Logger);
-      var caves = finder.FindCaves(map, depth);
+      List<Cave> caves = CaveFinderAlgorithm.FindCaves(this.Logger, map, depth);
       return caves;
     }
 
-    private object Run_ForEach(LispRuntimeCommand cmd, LispList list)
+    private object Run_MorphologicalFilter(LispRuntimeCommand cmd, LispList list)
     {
-      if (list.items.Count < 3)
-      {
-        throw new LispParseException($"'{cmd.CommandName}' command expects more than 1 parameters. Line: {list.line}:{list.position}");
-      }
+      CheckParameterCount(cmd, list, 1);
+      Map map = Run<Map>(list.items[1]);
+      Map newMap = MorphologicalFilter.Filter(this.Logger, map);
+      return newMap;
+    }
 
-      string variableName = Run<string>(list.items[1]);
-      string[] loopItems = Run<string[]>(list.items[2]);
+    private object Run_LevelDetectFilter(LispRuntimeCommand cmd, LispList list)
+    {
+      CheckParameterCount(cmd, list, 1);
+      Map map = Run<Map>(list.items[1]);
+      double[] newMap = HoleDetectFilters.LevelDetect(this.Logger, map);
+      return newMap;
+    }
 
-      foreach (string variableValue in loopItems)
-      {
-        SetVariable(variableName, variableValue);
 
-        for (int i = 2; i < list.items.Count; i++)
-        {
-          Run(list.items[i]);
-        }
-      }
-
-      return null;
+    private object Run_CorrelationFilter(LispRuntimeCommand cmd, LispList list)
+    {
+      CheckParameterCount(cmd, list, 1);
+      Map map = Run<Map>(list.items[1]);
+      Map filteredMap = HoleDetectFilters.CorrelationRun(this.Logger, map);
+      return filteredMap;
     }
 
     private object Run_GenerateMap(LispRuntimeCommand cmd, LispList list)
@@ -261,45 +260,7 @@ namespace CaveSpy
       var map = alg.GenerateMap(type, width, height);
 
       return map;
-    }
-
-    private object Run_GetArg(LispRuntimeCommand cmd, LispList list)
-    {
-      CheckParameterCount(cmd, list, 1, 2);
-      string arg = Run<string>(list.items[1]);
-      object defaultValue = null;
-      if (list.items.Count > 2)
-        defaultValue = Run<object>(list.items[2]);
-      else
-        defaultValue = string.Empty;
-
-      var args = Environment.GetCommandLineArgs();
-      string returnValue = null;
-      for (int i = 0; i < args.Length; i++)
-      {
-        var a = args[i];
-        if (a == arg)
-        {
-          if (i + 1 < args.Length)
-            returnValue = args[i + 1];
-          else
-            break;
-        }
-      }
-
-      if (returnValue == null)
-        return defaultValue;
-
-      switch (defaultValue)
-      {
-        case double d:
-          return double.Parse(returnValue);
-        case int i:
-          return int.Parse(returnValue);
-        default:
-          return returnValue;
-      }
-    }
+    }   
 
     private object Run_GetExtension(LispRuntimeCommand cmd, LispList list)
     {
@@ -319,21 +280,17 @@ namespace CaveSpy
     private object Run_MakeMap(LispRuntimeCommand cmd, LispList list)
     {
       if (list.items.Count < 3)
-        throw new LispParseException("'{0}' command must have at least 2 parameters. Line: {2}:{3}",
-                cmd.CommandName, list.line, list.position);
+        throw new LispParseException($"'{cmd.CommandName}' command must have at least 2 parameters. Line: {list.line}:{list.position}");
 
       PointCloud pc = Run<PointCloud>(list.items[1]);
       int mapWidth = Run<int>(list.items[2]);
-
-      var map = new Map();
 
       HashSet<int> includedClassifications = new HashSet<int>();
       for (int i = 3; i < list.items.Count; i++)
         includedClassifications.Add(Run<int>(list.items[i]));
 
       MapAlgorithms alg = new MapAlgorithms(base.Logger);
-      alg.ReadCloudIntoMap(map, mapWidth, pc, includedClassifications);
-      return map;
+      return alg.ReadCloudIntoMap(mapWidth, pc, includedClassifications);
     }
 
     private object Run_MapCalculateSlopeAngle(LispRuntimeCommand cmd, LispList list)
@@ -350,10 +307,9 @@ namespace CaveSpy
       CheckParameterCount(cmd, list, 2);
       int c = 1;
       Map map = Run<Map>(list.items[c++]);
-      int lookDistance = Run<int>(list.items[c++]);
-      CaveFinderAlgorithm alg = new CaveFinderAlgorithm(Logger);
+      int lookDistance = Run<int>(list.items[c++]);      
 
-      return alg.MapDrainage(map, lookDistance);
+      return CaveFinderAlgorithm.MapDrainage(this.Logger, map, lookDistance);
     }
 
     private object Run_ReadFile(LispRuntimeCommand cmd, LispList list)
